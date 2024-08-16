@@ -1,33 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../@/components/ui/table"
 import { Input } from "../../../@/components/ui/input"
 import { Button } from "../../../@/components/ui/button"
-import { ICraftemItem } from '../../types';
+import { ICraftedItem } from '../../types';
 
 interface EquipmentListProps {
-  equipmentList: ICraftemItem[];
+  equipmentList: ICraftedItem[];
   updateEquipment: (ankama_id: number, field: 'amount' | 'sellPrice', value: number) => void;
-  finalizeEquipmentUpdate: (ankama_id: number) => void;
   removeEquipment: (ankama_id: number) => void;
-  pendingEquipmentUpdates: { [key: number]: Partial<ICraftemItem> };
 }
 
 const EquipmentList: React.FC<EquipmentListProps> = ({ 
   equipmentList, 
   updateEquipment, 
-  finalizeEquipmentUpdate,
-  removeEquipment,
-  pendingEquipmentUpdates
+  removeEquipment
 }) => {
+  const [localValues, setLocalValues] = useState<{ [key: string]: string }>({});
+
   const sortedEquipmentList = [...equipmentList].sort((a, b) => a.name.localeCompare(b.name));
 
   const handleChange = (ankama_id: number, field: 'amount' | 'sellPrice', value: string) => {
-    const numericValue = value.replace(/^0+/, '');
-    updateEquipment(ankama_id, field, numericValue === '' ? 0 : Number(numericValue));
+    setLocalValues(prev => ({
+      ...prev,
+      [`${ankama_id}-${field}`]: value
+    }));
   };
 
-  const handleBlur = (ankama_id: number) => {
-    finalizeEquipmentUpdate(ankama_id);
+  const handleBlur = (ankama_id: number, field: 'amount' | 'sellPrice') => {
+    const value = localValues[`${ankama_id}-${field}`];
+    if (value !== undefined) {
+      const numericValue = value.replace(/^0+/, '');
+      updateEquipment(ankama_id, field, numericValue === '' ? 0 : Number(numericValue));
+    }
   };
 
   return (
@@ -49,45 +53,47 @@ const EquipmentList: React.FC<EquipmentListProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedEquipmentList.map((item) => {
-                const pendingUpdate = pendingEquipmentUpdates[item.ankama_id] || {};
-                return (
-                  <TableRow key={item.ankama_id} className={`border-b border-border hover:bg-muted/50 ${item.profit > 0 ? 'bg-green-900/20' : item.profit < 0 ? 'bg-red-900/20' : ''}`}>
-                    <TableCell className="py-0.5 px-2">{item.name}</TableCell>
-                    <TableCell className="py-0.5 px-2">
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={pendingUpdate.amount !== undefined ? pendingUpdate.amount : item.amount}
-                        onChange={(e) => handleChange(item.ankama_id, 'amount', e.target.value)}
-                        onBlur={() => handleBlur(item.ankama_id)}
-                        className="w-20 bg-background text-foreground h-6 px-1"
-                      />
-                    </TableCell>
-                    <TableCell className="py-0.5 px-2">{item.costPerUnit.toLocaleString()}</TableCell>
-                    <TableCell className="py-0.5 px-2">
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={pendingUpdate.sellPrice !== undefined ? pendingUpdate.sellPrice : item.sellPrice}
-                        onChange={(e) => handleChange(item.ankama_id, 'sellPrice', e.target.value)}
-                        onBlur={() => handleBlur(item.ankama_id)}
-                        className="w-24 bg-background text-foreground h-6 px-1"
-                      />
-                    </TableCell>
-                    <TableCell className="py-0.5 px-2">{item.profit.toLocaleString()}</TableCell>
-                    <TableCell className="py-0.5 px-2">
-                      <Button 
-                        onClick={() => removeEquipment(item.ankama_id)}
-                        variant="destructive"
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {sortedEquipmentList.map((item) => (
+                <TableRow 
+                  key={item.ankama_id} 
+                  className={`border-b border-border hover:bg-muted/50 ${
+                    item.profit > 0 ? 'bg-green-900/20' : item.profit < 0 ? 'bg-red-900/20' : ''
+                  }`}
+                >
+                  <TableCell className="py-0.5 px-2">{item.name}</TableCell>
+                  <TableCell className="py-0.5 px-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={localValues[`${item.ankama_id}-amount`] ?? item.amount}
+                      onChange={(e) => handleChange(item.ankama_id, 'amount', e.target.value)}
+                      onBlur={() => handleBlur(item.ankama_id, 'amount')}
+                      className="w-20 bg-background text-foreground h-6 px-1"
+                    />
+                  </TableCell>
+                  <TableCell className="py-0.5 px-2">{item.costPerUnit.toLocaleString()}</TableCell>
+                  <TableCell className="py-0.5 px-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={localValues[`${item.ankama_id}-sellPrice`] ?? item.sellPrice}
+                      onChange={(e) => handleChange(item.ankama_id, 'sellPrice', e.target.value)}
+                      onBlur={() => handleBlur(item.ankama_id, 'sellPrice')}
+                      className="w-24 bg-background text-foreground h-6 px-1"
+                    />
+                  </TableCell>
+                  <TableCell className="py-0.5 px-2">{item.profit.toLocaleString()}</TableCell>
+                  <TableCell className="py-0.5 px-2">
+                    <Button 
+                      onClick={() => removeEquipment(item.ankama_id)}
+                      variant="destructive"
+                      size="sm"
+                    >
+                      Remove
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

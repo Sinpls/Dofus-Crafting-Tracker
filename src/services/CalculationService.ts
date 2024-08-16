@@ -1,171 +1,242 @@
+// CalculationService.ts
+
 import { dataAccessService } from './DataAccessService';
-import { IIngredient } from '../types';
-
-export interface EquipmentItem {
-  ankama_id: number;
-  name: string;
-  amount: number;
-  costPerUnit: number;
-  sellPrice: number;
-  profit: number;
-}
-
-export interface IntermediateItem {
-  name: string;
-  amount: number;
-  cost: number;
-  level: number;
-}
+import { ICraftedItem, IIngredient, IIntermediateItem, IDofusItem } from '../types';
 
 class CalculationService {
   private userSetCosts: { [key: string]: number } = {};
-  private intermediateItems: { [key: string]: IntermediateItem } = {};
-  private totalAmounts: { [key: string]: number } = {};
   private calculatedCosts: { [key: string]: number } = {};
-  private originalIntermediateItems: { [key: string]: IntermediateItem } = {};
-  private calculationDepth: number = 0;
-  private maxCalculationDepth: number = 50; // Adjust this value as needed
+  private intermediateItems: { [key: string]: IIntermediateItem } = {};
+  private ingredients: { [key: string]: IIngredient } = {};
+  private itemRecipes: { [key: string]: IDofusItem['recipe'] } = {};
 
-  async calculateItemCost(itemDetails: any, amount: number, level: number = 1): Promise<number> {
-    if (this.calculationDepth >= this.maxCalculationDepth) {
-      console.warn(`Max calculation depth reached for item: ${itemDetails.name}`);
-      return 0; // or return a default cost
-    }
+  async calculateItemCost(item: IDofusItem, amount: number): Promise<number> {
+    console.log(`Calculating cost for ${item.name}, amount: ${amount}`);
+    const itemName = item.name;
 
-    this.calculationDepth++;
-
-    const itemName = itemDetails.name;
-    if (this.userSetCosts[itemName]) {
-      this.calculationDepth--;
+    if (this.userSetCosts[itemName] !== undefined) {
+      console.log(`Using user-set cost for ${itemName}: ${this.userSetCosts[itemName]}`);
       return this.userSetCosts[itemName] * amount;
     }
 
-    if (this.calculatedCosts[itemName]) {
-      this.calculationDepth--;
+    if (this.calculatedCosts[itemName] !== undefined) {
+      console.log(`Using previously calculated cost for ${itemName}: ${this.calculatedCosts[itemName]}`);
       return this.calculatedCosts[itemName] * amount;
     }
 
     let totalCost = 0;
-    if (itemDetails.recipe && itemDetails.recipe.length > 0) {
-      const ingredients = this.processRecipe(itemDetails.recipe, amount);
-      for (const ingredient of ingredients) {
-        const ingredientDetails = await dataAccessService.getItemDetails(ingredient.ankama_id);
+    if (item.recipe && item.recipe.length > 0) {
+      console.log(`Calculating recipe cost for ${itemName}`);
+      this.itemRecipes[itemName] = item.recipe;
+      for (const ingredient of item.recipe) {
+        const ingredientDetails = await dataAccessService.getItemDetails(ingredient.item_ankama_id);
         if (ingredientDetails) {
-          const ingredientName = ingredientDetails.name;
-          const ingredientAmount = ingredient.amount;
+          const ingredientCost = await this.calculateItemCost(ingredientDetails, ingredient.quantity * amount);
+          totalCost += ingredientCost;
+          console.log(`Ingredient ${ingredientDetails.name} cost: ${ingredientCost}`);
 
-          this.totalAmounts[ingredientName] = (this.totalAmounts[ingredientName] || 0) + ingredientAmount;
+          this.updateIngredientOrIntermediate(ingredientDetails, ingredient.quantity * amount, ingredientCost);
+        }
+      }
+    } else {
+      console.log(`${itemName} is a base resource, using default or user-set cost`);
+      totalCost = (this.userSetCosts[itemName] || 0) * amount;
+    }
 
-          const subCost = await this.calculateItemCost(ingredientDetails, ingredientAmount, level + 1);
-          totalCost += subCost;
+    const costPerUnit = totalCost / amount;
+    this.calculatedCosts[itemName] = costPerUnit;
+    console.log(`Calculated cost for ${itemName}: ${costPerUnit} per unit`);
+    return totalCost;
+  }
 
-          if (!this.userSetCosts[ingredientName] && ingredientDetails.recipe && ingredientDetails.recipe.length > 0) {
-            if (!this.intermediateItems[ingredientName]) {
-              const intermediateItem = {
-                name: ingredientName,
-                amount: ingredientAmount,
-                cost: subCost / ingredientAmount,
-                level: level + 1
-              };
-              this.intermediateItems[ingredientName] = intermediateItem;
-              this.originalIntermediateItems[ingredientName] = { ...intermediateItem };
-            } else {
-              this.intermediateItems[ingredientName].amount += ingredientAmount;
-              this.intermediateItems[ingredientName].cost = (this.intermediateItems[ingredientName].cost * (this.intermediateItems[ingredientName].amount - ingredientAmount) + subCost) / this.intermediateItems[ingredientName].amount;
-            }
+  private updateIngredientOrIntermediate(item: IDofusItem, amount: number, cost: number) {
+    console.log(`Updating ingredient/intermediate: ${item.name}, amount: ${amount}, cost: ${cost}`);
+    const itemName = item.name;
+    if (item.recipe && item.recipe.length > 0) {
+      // It's an intermediate item
+      if (!this.intermediateItems[itemName]) {
+        this.intermediateItems[itemName] = {
+          name: itemName,
+          amount: amount,
+          cost: this.userSetCosts[itemName] !== undefined ? this.userSetCosts[itemName] : cost / amount,
+          level: item.level,
+          isManuallyOverridden: this.userSetCosts[itemName] !== undefined
+        };
+      } else {
+        const existingItem = this.intermediateItems[itemName];
+        if (!existingItem.isManuallyOverridden) {
+          existingItem.amount += amount;
+          existingItem.cost = (existingItem.cost * existingItem.amount + cost) / (existingItem.amount + amount);
+        }
+      }
+      console.log(`Updated intermediate item: ${JSON.stringify(this.intermediateItems[itemName])}`);
+    } else {
+      // It's a base ingredient
+      if (!this.ingredients[itemName]) {
+        this.ingredients[itemName] = {
+          name: itemName,
+          amount: amount,
+          cost: this.userSetCosts[itemName] !== undefined ? this.userSetCosts[itemName] : cost / amount,
+          type: item.type.name,
+          isManuallyOverridden: this.userSetCosts[itemName] !== undefined
+        };
+      } else {
+        const existingIngredient = this.ingredients[itemName];
+        if (!existingIngredient.isManuallyOverridden) {
+          existingIngredient.amount += amount;
+          existingIngredient.cost = (existingIngredient.cost * existingIngredient.amount + cost) / (existingIngredient.amount + amount);
+        }
+      }
+      console.log(`Updated ingredient: ${JSON.stringify(this.ingredients[itemName])}`);
+    }
+  }
+  setUserCost(itemName: string, cost: number): void {
+    console.log(`Setting user cost for ${itemName}: ${cost}`);
+    
+    if (this.intermediateItems[itemName]) {
+      const intermediateItem = this.intermediateItems[itemName];
+      const wasOverridden = intermediateItem.isManuallyOverridden;
+      
+      if (cost !== 0) {
+        this.userSetCosts[itemName] = cost;
+        intermediateItem.cost = cost;
+        intermediateItem.isManuallyOverridden = true;
+        this.removeUnusedIngredients(itemName);
+      } else {
+        delete this.userSetCosts[itemName];
+        intermediateItem.isManuallyOverridden = false;
+        this.recalculateIntermediateItemCost(itemName);
+        this.restoreRecipeIngredients(itemName);
+      }
+
+      console.log(`Intermediate item ${itemName} updated:`, {
+        cost: intermediateItem.cost,
+        isManuallyOverridden: intermediateItem.isManuallyOverridden,
+        wasOverridden: wasOverridden
+      });
+    } else if (this.ingredients[itemName]) {
+      this.ingredients[itemName].cost = cost;
+      this.ingredients[itemName].isManuallyOverridden = cost !== 0;
+      if (cost !== 0) {
+        this.userSetCosts[itemName] = cost;
+      } else {
+        delete this.userSetCosts[itemName];
+      }
+    }
+
+    delete this.calculatedCosts[itemName];
+
+    console.log("Updated ingredients:", this.ingredients);
+    console.log("Updated intermediate items:", this.intermediateItems);
+    console.log("User set costs:", this.userSetCosts);
+  }
+
+  private recalculateIntermediateItemCost(itemName: string): void {
+    const recipe = this.itemRecipes[itemName];
+    if (recipe) {
+      let totalCost = 0;
+      for (const ingredient of recipe) {
+        const ingredientCost = this.getIngredientCost(ingredient.name);
+        totalCost += ingredientCost * ingredient.quantity;
+      }
+      this.intermediateItems[itemName].cost = totalCost / this.intermediateItems[itemName].amount;
+    }
+  }
+  private getIngredientCost(ingredientName: string): number {
+    if (this.userSetCosts[ingredientName] !== undefined) {
+      return this.userSetCosts[ingredientName];
+    }
+    if (this.ingredients[ingredientName]) {
+      return this.ingredients[ingredientName].cost;
+    }
+    if (this.intermediateItems[ingredientName]) {
+      return this.intermediateItems[ingredientName].cost;
+    }
+    return 0;
+  }
+  private removeUnusedIngredients(intermediateItemName: string): void {
+    const recipe = this.itemRecipes[intermediateItemName];
+    if (recipe) {
+      for (const ingredient of recipe) {
+        const ingredientName = ingredient.name;
+        if (this.ingredients[ingredientName]) {
+          this.ingredients[ingredientName].amount -= ingredient.quantity;
+          if (this.ingredients[ingredientName].amount <= 0) {
+            delete this.ingredients[ingredientName];
           }
         }
       }
     }
-
-    this.calculatedCosts[itemName] = totalCost / amount;
-    this.calculationDepth--;
-    return totalCost;
   }
 
-  processRecipe(recipe: any[], amount: number = 1): any[] {
-    return recipe.map(item => ({
-      ankama_id: item.item_ankama_id,
-      amount: item.quantity * amount,
-      type: item.item_subtype
-    }));
+  private restoreRecipeIngredients(intermediateItemName: string): void {
+    const recipe = this.itemRecipes[intermediateItemName];
+    if (recipe) {
+      for (const ingredient of recipe) {
+        const ingredientName = ingredient.name;
+        if (this.ingredients[ingredientName]) {
+          this.ingredients[ingredientName].amount += ingredient.quantity;
+        } else {
+          this.ingredients[ingredientName] = {
+            name: ingredientName,
+            amount: ingredient.quantity,
+            cost: 0,
+            type: 'Resource', // Default to Resource, update if needed
+            isManuallyOverridden: false
+          };
+        }
+      }
+    }
   }
 
-  async calculateEquipmentCosts(equipmentList: EquipmentItem[]): Promise<EquipmentItem[]> {
+  async calculateEquipmentCosts(equipmentList: ICraftedItem[]): Promise<ICraftedItem[]> {
+    console.log("Calculating equipment costs");
+    console.time("Equipment cost calculation");
     this.clearCalculations();
-    const updatedList: EquipmentItem[] = [];
+    const updatedList: ICraftedItem[] = [];
 
     for (const item of equipmentList) {
       const itemDetails = await dataAccessService.getItemDetails(item.ankama_id);
       if (itemDetails) {
-        this.calculationDepth = 0; // Reset depth for each equipment item
-        const costPerUnit = await this.calculateItemCost(itemDetails, item.amount);
-        const totalCost = costPerUnit;
+        console.log(`Processing ${itemDetails.name}`);
+        const totalCost = await this.calculateItemCost(itemDetails, item.amount);
+        const costPerUnit = totalCost / item.amount;
         const totalSell = item.sellPrice * item.amount;
         const profit = totalSell - totalCost;
 
         updatedList.push({
           ...item,
-          costPerUnit: Math.round(costPerUnit / item.amount),
+          costPerUnit: Math.round(costPerUnit),
           profit: Math.round(profit)
         });
+        console.log(`Updated ${itemDetails.name}: costPerUnit=${costPerUnit}, profit=${profit}`);
       }
     }
 
+    console.log("Final ingredients:", this.ingredients);
+    console.log("Final intermediate items:", this.intermediateItems);
+    console.timeEnd("Equipment cost calculation");
     return updatedList;
   }
 
-  async calculateIngredientsAndIntermediates(equipmentList: EquipmentItem[]): Promise<{
-    updatedIngredients: IIngredient[],
-    updatedIntermediateItems: IntermediateItem[]
-  }> {
-    this.clearCalculations();
-    for (const item of equipmentList) {
-      const itemDetails = await dataAccessService.getItemDetails(item.ankama_id);
-      if (itemDetails) {
-        await this.calculateItemCost(itemDetails, item.amount);
-      }
-    }
-    return {
-      updatedIngredients: this.getIngredients(),
-      updatedIntermediateItems: this.getIntermediateItems()
-    };
-  }
-
-  getIntermediateItems(): IntermediateItem[] {
-    return Object.values(this.intermediateItems).filter(item => !this.userSetCosts[item.name]);
+  getIntermediateItems(): IIntermediateItem[] {
+    const items = Object.values(this.intermediateItems);
+    console.log("Getting intermediate items:", items);
+    return items;
   }
 
   getIngredients(): IIngredient[] {
-    return Object.entries(this.totalAmounts)
-      .filter(([name]) => !this.intermediateItems[name] || this.userSetCosts[name])
-      .map(([name, amount]) => ({
-        name,
-        amount,
-        cost: this.userSetCosts[name] || this.calculatedCosts[name] || 0,
-        type: this.intermediateItems[name] ? 'Intermediate' : 'Resource'
-      }));
+    console.log("Getting ingredients:", Object.values(this.ingredients));
+    return Object.values(this.ingredients);
   }
 
-  setUserCost(itemName: string, cost: number): void {
-    if (cost === 0 && this.originalIntermediateItems[itemName]) {
-      delete this.userSetCosts[itemName];
-      this.intermediateItems[itemName] = { ...this.originalIntermediateItems[itemName] };
-    } else {
-      this.userSetCosts[itemName] = cost;
-      if (this.intermediateItems[itemName]) {
-        delete this.intermediateItems[itemName];
-      }
-    }
-    delete this.calculatedCosts[itemName];
-  }
 
   clearCalculations(): void {
-    this.intermediateItems = {};
-    this.totalAmounts = {};
+    console.log("Clearing previous calculations");
     this.calculatedCosts = {};
-    this.originalIntermediateItems = {};
-    this.calculationDepth = 0;
+    this.intermediateItems = {};
+    this.ingredients = {};
+    // Note: We don't clear userSetCosts as these should persist
   }
 }
 

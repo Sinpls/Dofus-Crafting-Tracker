@@ -1,4 +1,5 @@
 Dofus-Salescraft
+├── .gitattributes
 ├── .gitignore
 ├── components.json
 ├── config

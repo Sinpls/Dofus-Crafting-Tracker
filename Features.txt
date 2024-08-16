@@ -24,7 +24,7 @@ Techstack:
 
 Current Issues:
 - The cost values are not being updated properly when intermediate items get a manual cost. The behaviour should be:
-   - An intermediate value gets manually overridden. It should be moved to the ingredient list, then recalculation happens and any ingredients that the intermediate item consists of should be removed. Unless of course there are other intermediate items that use the same ingredients.
-   - The intermediate item should get type 'Intermediate' and be highlighted. The updated costs must also be moved to the ingredients list. Currently it gets reset.
-- Ingredients are all shown as 'Resource' type. However this information should be pulled from the JSON information we get passed.
+   - An intermediate value gets manually overridden. It should be moved to the ingredient list with type 'Intermediate', then recalculation happens and any ingredients that the intermediate item consists of should be removed. Unless of course there are other intermediate items that use the same ingredients.
+   - The intermediate items that are in the ingredient list shoule be be highlighted. The updated costs must also be moved to the ingredients list.
+   - This process should be reversible by setting the intermediate item (that is in the ingredient list) cost back to 0. Then recalculation happens again.
 

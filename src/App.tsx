@@ -1,7 +1,10 @@
+// App.tsx
+
 import React, { useState, useEffect } from 'react';
 import Craftimizer from './components/Craftimizer';
 import SearchBar from './components/Craftimizer/SearchBar';
-import { dataAccessService, DofusItem } from './services/DataAccessService';
+import { dataAccessService} from './services/DataAccessService';
+import { IDofusItem } from './types';
 import { useCalculation } from './hooks/useCalculation';
 import './globals.css';
 import { Button } from "../@/components/ui/button";
@@ -10,7 +13,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<DofusItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<IDofusItem | null>(null);
   
   const {
     equipmentList,
@@ -45,7 +48,7 @@ const App: React.FC = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleSearchItemSelect = (item: DofusItem) => {
+  const handleSearchItemSelect = (item: IDofusItem) => {
     setSelectedItem(item);
   };
 
@@ -62,6 +65,7 @@ const App: React.FC = () => {
     return <div className="text-red-500">{error}</div>;
   }
 
+  console.log("App rendering. equipmentList length:", equipmentList.length);
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
