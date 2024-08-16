@@ -1,0 +1,30 @@
+Implemented:
+- JSON download
+- Search Results
+- Equipment being added to the EquipmentList
+- shadcn/ui library has been installed and ready for use. ALWAYS USE THIS.
+- Dark/Light mode toggle
+- 4 tables (searchResults, ingredientList, IntermediateItemsList and EquipmentList) have been created
+- Basic calculation is implemented.
+
+To be implemented:
+- A Salestracker Tab
+   - Export the equipment list with amount cost and sell value to the sale SalesTracker
+   - Persistent storage for only the salestracker tab with an indexedDB
+   - Extra columns with data of export and date of sale
+   - Ability to edit the sell values in the salestracker items
+   - Basic filtering
+
+
+Techstack:
+-typescript
+-vite
+-tailwindcss
+-electron
+
+Current Issues:
+- The cost values are not being updated properly when intermediate items get a manual cost. The behaviour should be:
+   - An intermediate value gets manually overridden. It should be moved to the ingredient list, then recalculation happens and any ingredients that the intermediate item consists of should be removed. Unless of course there are other intermediate items that use the same ingredients.
+   - The intermediate item should get type 'Intermediate' and be highlighted. The updated costs must also be moved to the ingredients list. Currently it gets reset.
+- Ingredients are all shown as 'Resource' type. However this information should be pulled from the JSON information we get passed.
+
