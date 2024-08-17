@@ -2,14 +2,14 @@ import Dexie from 'dexie';
 import { ICraftedItem, IIngredient, ISale, DofusDatabase } from '../types';
 
 class DofusDatabaseImpl extends Dexie implements DofusDatabase {
-  equipment!: Dexie.Table<ICraftedItem, number>;
+  craftedItem!: Dexie.Table<ICraftedItem, number>;
   ingredients!: Dexie.Table<IIngredient, number>;
   sales!: Dexie.Table<ISale, number>;
 
   constructor() {
     super('DofusDatabase');
     this.version(1).stores({
-      equipment: '++id, ankama_id, name, amount, sellPrice',
+      craftedItem: '++id, ankama_id, name, amount, sellPrice',
       ingredients: '++id, name, amount, cost, type',
       sales: '++id, itemName, quantity, costPrice, sellPrice, addedDate, sellDate, profit'
     });

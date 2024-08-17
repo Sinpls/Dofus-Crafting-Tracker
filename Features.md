@@ -141,12 +141,18 @@ The project is built using TypeScript, Vite, Tailwind CSS, Electron, and the sha
 2. Implement summary statistics calculation and display:
    - Calculate and display the sum of profit made
    - Calculate and display the total turnover
+   - Place these numbers between title and table
+   - Should be based on whether the Sell Data has a valid date (meaning it has sold)
 
-3. (Optional) Integrate Dexie.js Query API for advanced analysis features:
+3. Refine the style of the application.
+   -  Ensure the entire application properly makes use of the globals.css
+   - Change the tables to be a sligthtly different colour (a bit lights in dark mode, a bit darker in light mode)
+
+4. (Optional) Integrate Dexie.js Query API for advanced analysis features:
    - Implement advanced querying capabilities
    - Add features like quick turnover analysis or highest profit percentage per item
 
-4. Refine user experience:
-   - Implement more advanced filtering options
+5. Refine user experience:
+   - Implement more advanced filtering options such as sold or not
    - Add data visualization features (e.g., charts, graphs)
    - Develop an export feature for sales data

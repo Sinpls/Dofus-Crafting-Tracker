@@ -10,7 +10,7 @@ import { useCalculation } from '../hooks/useCalculation';
 const SalesTracker: React.FC = () => {
   const [sales, setSales] = useState<ISale[]>([]);
   const [localValues, setLocalValues] = useState<{ [key: string]: string }>({});
-  const { addEquipment } = useCalculation();
+  const { addCraftedItem } = useCalculation();
 
   useEffect(() => {
     loadSales();
@@ -57,7 +57,7 @@ const SalesTracker: React.FC = () => {
   };
 
   const handleAddToCraftimizer = (itemName: string) => {
-    addEquipment({ name: itemName, ankama_id: 0, level: 0, type: { name: '', id: 0 } });
+    addCraftedItem({ name: itemName, ankama_id: 0, level: 0, type: { name: '', id: 0 } });
   };
 
   const formatDate = (date: Date | string | undefined | null) => {

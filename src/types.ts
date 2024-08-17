@@ -29,6 +29,7 @@ export interface ISale {
   sellDate: Date | null;
   profit: number;
 }
+
 export interface IIntermediateItem {
     name: string;
     amount: number;
@@ -55,7 +56,7 @@ export interface IDataFile {
 }
 
 export interface DofusDatabase extends Dexie {
-  equipment: Dexie.Table<ICraftedItem, number>;
+  craftedItem: Dexie.Table<ICraftedItem, number>;
   ingredients: Dexie.Table<IIngredient, number>;
   sales: Dexie.Table<ISale, number>;
 }

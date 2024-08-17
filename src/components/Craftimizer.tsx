@@ -13,23 +13,23 @@ interface CraftimizerProps {
 
 const Craftimizer: React.FC<CraftimizerProps> = ({ selectedItem }) => {
   const {
-    equipmentList,
+    craftedItemList,
     intermediateItems,
     ingredients,
-    addEquipment,
-    removeEquipment,
-    updateEquipment,
+    addCraftedItem,
+    removeCraftedItem,
+    updateCraftedItem,
     updateIngredientCost,
     updateIntermediateItemCost,
   } = useCalculation();
 
   useEffect(() => {
     if (selectedItem) {
-      addEquipment(selectedItem);
+      addCraftedItem(selectedItem);
     }
-  }, [selectedItem, addEquipment]);
+  }, [selectedItem, addCraftedItem]);
 
-  if (!equipmentList || !intermediateItems || !ingredients) {
+  if (!craftedItemList || !intermediateItems || !ingredients) {
     console.error("One or more lists are undefined");
     return <div>Error: Data is not available</div>;
   }
@@ -39,9 +39,9 @@ const Craftimizer: React.FC<CraftimizerProps> = ({ selectedItem }) => {
       <div className="flex flex-col w-1/2 space-y-2 overflow-hidden">
         <div className="flex-1 overflow-hidden">
           <CraftedItemList 
-            equipmentList={equipmentList}
-            updateEquipment={updateEquipment}
-            removeEquipment={removeEquipment}
+            craftedItemList={craftedItemList}
+            updateCraftedItem={updateCraftedItem}
+            removeCrafedItem={removeCraftedItem}
           />
         </div>
         <div className="flex-1 overflow-hidden">

@@ -5,20 +5,20 @@ import { Button } from "../../../@/components/ui/button"
 import { ICraftedItem } from '../../types';
 import { db } from '../../services/DatabaseService';
 
-interface EquipmentListProps {
-  equipmentList: ICraftedItem[];
-  updateEquipment: (ankama_id: number, field: 'amount' | 'sellPrice', value: number) => void;
-  removeEquipment: (ankama_id: number) => void;
+interface CraftedItemListProps {
+  craftedItemList: ICraftedItem[];
+  updateCraftedItem: (ankama_id: number, field: 'amount' | 'sellPrice', value: number) => void;
+  removeCrafedItem: (ankama_id: number) => void;
 }
 
-const CraftedItemList: React.FC<EquipmentListProps> = ({ 
-  equipmentList, 
-  updateEquipment, 
-  removeEquipment
+const CraftedItemList: React.FC<CraftedItemListProps> = ({ 
+  craftedItemList: craftedItemList, 
+  updateCraftedItem: updateCraftedItem, 
+  removeCrafedItem: removeCraftedItem
 }) => {
   const [localValues, setLocalValues] = useState<{ [key: string]: string }>({});
 
-  const sortedEquipmentList = [...equipmentList].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedCraftedItemList = [...craftedItemList].sort((a, b) => a.name.localeCompare(b.name));
 
   const handleChange = (ankama_id: number, field: 'amount' | 'sellPrice', value: string) => {
     setLocalValues(prev => ({
@@ -31,7 +31,7 @@ const CraftedItemList: React.FC<EquipmentListProps> = ({
     const value = localValues[`${ankama_id}-${field}`];
     if (value !== undefined) {
       const numericValue = value.replace(/^0+/, '');
-      updateEquipment(ankama_id, field, numericValue === '' ? 0 : Number(numericValue));
+      updateCraftedItem(ankama_id, field, numericValue === '' ? 0 : Number(numericValue));
     }
   };
 
@@ -69,7 +69,7 @@ const CraftedItemList: React.FC<EquipmentListProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedEquipmentList.map((item) => (
+              {sortedCraftedItemList.map((item) => (
                 <TableRow 
                   key={item.ankama_id} 
                   className={`border-b border-border hover:bg-muted/50 ${
@@ -101,7 +101,7 @@ const CraftedItemList: React.FC<EquipmentListProps> = ({
                   <TableCell className="py-0.5 px-2">{item.profit.toLocaleString()}</TableCell>
                   <TableCell className="py-0.5 px-2">
                     <Button 
-                      onClick={() => removeEquipment(item.ankama_id)}
+                      onClick={() => removeCraftedItem(item.ankama_id)}
                       variant="destructive"
                       size="sm"
                     >

@@ -170,11 +170,11 @@ class CalculationService {
     }
   }
 
-  async calculateEquipmentCosts(equipmentList: ICraftedItem[]): Promise<ICraftedItem[]> {
+  async calculateCraftedItemCosts(craftedItemList: ICraftedItem[]): Promise<ICraftedItem[]> {
     this.clearCalculations();
     const updatedList: ICraftedItem[] = [];
 
-    for (const item of equipmentList) {
+    for (const item of craftedItemList) {
       const itemDetails = await dataAccessService.getItemDetails(item.ankama_id);
       if (itemDetails) {
         const totalCost = await this.calculateItemCost(itemDetails, item.amount);
@@ -198,17 +198,14 @@ class CalculationService {
 
   getIntermediateItems(): IIntermediateItem[] {
     const items = Object.values(this.intermediateItems);
-    console.log("Getting intermediate items:", items);
     return items.sort((a, b) => a.level - b.level);  // Sort by level in descending order
   }
 
   getIngredients(): IIngredient[] {
-    console.log("Getting ingredients:", Object.values(this.ingredients));
     return Object.values(this.ingredients);
   }
 
   clearCalculations(): void {
-    console.log("Clearing previous calculations");
     this.calculatedCosts = {};
     this.intermediateItems = {};
     this.ingredients = {};

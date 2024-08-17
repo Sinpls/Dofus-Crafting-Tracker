@@ -5,10 +5,10 @@ import { dataAccessService } from '../../services/DataAccessService';
 
 interface SearchBarProps {
   onItemSelect: (item: IDofusItem) => void;
-  existingEquipment: { [key: number]: number };  // Map of ankama_id to amount
+  existingCraftedItem: { [key: number]: number };  // Map of ankama_id to amount
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onItemSelect, existingEquipment }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ onItemSelect, existingCraftedItem: existingCraftedItem }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<IDofusItem[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -54,7 +54,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onItemSelect, existingEquipment }
     <div className="relative" ref={dropdownRef}>
       <Input
         type="text"
-        placeholder="Search Equipment..."
+        placeholder="Search Items..."
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -72,9 +72,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ onItemSelect, existingEquipment }
               onClick={() => handleItemClick(item)}
             >
               {item.name} - {item.type.name}
-              {existingEquipment[item.ankama_id] !== undefined && (
+              {existingCraftedItem[item.ankama_id] !== undefined && (
                 <span className="ml-2 text-muted-foreground">
-                  (Current: {existingEquipment[item.ankama_id]})
+                  (Current: {existingCraftedItem[item.ankama_id]})
                 </span>
               )}
             </div>

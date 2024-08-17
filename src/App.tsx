@@ -19,7 +19,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('craftimizer');
   
   const {
-    equipmentList,
+    craftedItemList,
   } = useCalculation();
 
   useEffect(() => {
@@ -56,7 +56,7 @@ const App: React.FC = () => {
     setActiveTab('craftimizer');
   };
 
-  const existingEquipment = equipmentList.reduce((acc, item) => {
+  const existingCraftedItem = craftedItemList.reduce((acc, item) => {
     acc[item.ankama_id] = item.amount;
     return acc;
   }, {} as { [key: number]: number });
@@ -74,7 +74,7 @@ const App: React.FC = () => {
       <div className="p-0 flex-shrink-0">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-4">
-            <SearchBar onItemSelect={handleSearchItemSelect} existingEquipment={existingEquipment} />
+            <SearchBar onItemSelect={handleSearchItemSelect} existingCraftedItem={existingCraftedItem} />
           </div>
           <Button onClick={toggleDarkMode} variant="outline">
             {isDarkMode ? 'Light Mode' : 'Dark Mode'}

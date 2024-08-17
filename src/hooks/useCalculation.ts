@@ -3,11 +3,11 @@ import { ICraftedItem, IIngredient, IIntermediateItem, IDofusItem } from '../typ
 import { calculationService } from '../services/CalculationService';
 
 export const useCalculation = () => {
-  const [equipmentList, setEquipmentList] = useState<ICraftedItem[]>([]);
+  const [craftedItemList, setCraftedItemList] = useState<ICraftedItem[]>([]);
   const [ingredients, setIngredients] = useState<IIngredient[]>([]);
   const [intermediateItems, setIntermediateItems] = useState<IIntermediateItem[]>([]);
   const calculationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousEquipmentListRef = useRef<ICraftedItem[]>([]);
+  const previousCraftedItemListRef = useRef<ICraftedItem[]>([]);
 
 
   const updateStates = useCallback(() => {
@@ -18,13 +18,13 @@ export const useCalculation = () => {
   const calculateCosts = useCallback(async () => {
     console.log("Starting cost calculation...");
     try {
-      const updatedEquipmentList = await calculationService.calculateEquipmentCosts(equipmentList);
-      setEquipmentList(updatedEquipmentList);
+      const updatedCraftedItemList = await calculationService.calculateCraftedItemCosts(craftedItemList);
+      setCraftedItemList(updatedCraftedItemList);
       updateStates();
     } catch (error) {
       console.error("Error during calculation:", error);
     }
-  }, [equipmentList, updateStates]);
+  }, [craftedItemList, updateStates]);
   const debouncedCalculateCosts = useCallback(() => {
     if (calculationTimeoutRef.current) {
       clearTimeout(calculationTimeoutRef.current);
@@ -34,7 +34,7 @@ export const useCalculation = () => {
     }, 300);
   }, [calculateCosts]);
 
-  const hasEquipmentListChanged = useCallback((prevList: ICraftedItem[], currentList: ICraftedItem[]) => {
+  const hasCraftedItemListChanged = useCallback((prevList: ICraftedItem[], currentList: ICraftedItem[]) => {
     if (prevList.length !== currentList.length) return true;
     return prevList.some((prevItem, index) => {
       const currentItem = currentList[index];
@@ -45,15 +45,15 @@ export const useCalculation = () => {
   }, []);
 
   useEffect(() => {
-    if (hasEquipmentListChanged(previousEquipmentListRef.current, equipmentList)) {
+    if (hasCraftedItemListChanged(previousCraftedItemListRef.current, craftedItemList)) {
       debouncedCalculateCosts();
-      previousEquipmentListRef.current = equipmentList;
+      previousCraftedItemListRef.current = craftedItemList;
     }
-  }, [equipmentList, debouncedCalculateCosts, hasEquipmentListChanged]);
+  }, [craftedItemList, debouncedCalculateCosts, hasCraftedItemListChanged]);
 
-  const addEquipment = useCallback((item: IDofusItem) => {
-    console.log("Adding equipment:", item);
-    setEquipmentList(prevList => {
+  const addCraftedItem = useCallback((item: IDofusItem) => {
+    console.log("Adding item:", item);
+    setCraftedItemList(prevList => {
       const existingItemIndex = prevList.findIndex(eq => eq.ankama_id === item.ankama_id);
       if (existingItemIndex !== -1) {
         return prevList.map((eq, index) =>
@@ -75,14 +75,14 @@ export const useCalculation = () => {
     });
   }, []);
 
-  const removeEquipment = useCallback((ankama_id: number) => {
-    console.log("Removing equipment:", ankama_id);
-    setEquipmentList(prevList => prevList.filter(item => item.ankama_id !== ankama_id));
+  const removeCraftedItem = useCallback((ankama_id: number) => {
+    console.log("Removing item:", ankama_id);
+    setCraftedItemList(prevList => prevList.filter(item => item.ankama_id !== ankama_id));
   }, []);
 
-  const updateEquipment = useCallback((ankama_id: number, field: 'amount' | 'sellPrice', value: number) => {
-    console.log("Updating equipment:", ankama_id, field, value);
-    setEquipmentList(prevList => 
+  const updateCraftedItem = useCallback((ankama_id: number, field: 'amount' | 'sellPrice', value: number) => {
+    console.log("Updating item:", ankama_id, field, value);
+    setCraftedItemList(prevList => 
       prevList.map(item => 
         item.ankama_id === ankama_id ? { ...item, [field]: value } : item
       )
@@ -105,12 +105,12 @@ export const useCalculation = () => {
   }, [calculateCosts]);
 
   return {
-    equipmentList: equipmentList || [],
+    craftedItemList: craftedItemList || [],
     ingredients: ingredients || [],
     intermediateItems: intermediateItems || [],
-    addEquipment,
-    removeEquipment,
-    updateEquipment,
+    addCraftedItem,
+    removeCraftedItem,
+    updateCraftedItem,
     updateIngredientCost,
     updateIntermediateItemCost,
   };

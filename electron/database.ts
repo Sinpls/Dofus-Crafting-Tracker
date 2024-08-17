@@ -2,7 +2,7 @@ import Dexie from 'dexie';
 import { ICraftedItem, IIngredient, ISale, DofusDatabase } from '../src/types';
 
 class DofusDatabaseImpl extends Dexie implements DofusDatabase {
-  equipment!: Dexie.Table<ICraftedItem, number>;
+  craftedItem!: Dexie.Table<ICraftedItem, number>;
   ingredients!: Dexie.Table<IIngredient, number>;
   sales!: Dexie.Table<ISale, number>;
 
