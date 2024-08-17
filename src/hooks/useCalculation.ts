@@ -1,168 +1,40 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { IDofusItem, IIngredient, IIntermediateItem, ICraftemItem } from '../types';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { ICraftedItem, IIngredient, IIntermediateItem, IDofusItem } from '../types';
 import { calculationService } from '../services/CalculationService';
 
 export const useCalculation = () => {
-  const [equipmentList, setEquipmentList] = useState<ICraftemItem[]>([]);
+  const [equipmentList, setEquipmentList] = useState<ICraftedItem[]>([]);
   const [ingredients, setIngredients] = useState<IIngredient[]>([]);
   const [intermediateItems, setIntermediateItems] = useState<IIntermediateItem[]>([]);
-  const [pendingCostUpdates, setPendingCostUpdates] = useState<{ [key: string]: number }>({});
-  const [pendingEquipmentUpdates, setPendingEquipmentUpdates] = useState<{ [key: number]: Partial<ICraftemItem> }>({});
-  const [isCalculating, setIsCalculating] = useState(false);
   const calculationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousEquipmentListRef = useRef<ICraftemItem[]>([]);
+  const previousEquipmentListRef = useRef<ICraftedItem[]>([]);
 
-  const [manuallyOverriddenItems, setManuallyOverriddenItems] = useState<Set<string>>(new Set());
+
+  const updateStates = useCallback(() => {
+    setIngredients(calculationService.getIngredients());
+    setIntermediateItems(calculationService.getIntermediateItems());
+  }, []);
 
   const calculateCosts = useCallback(async () => {
-    if (isCalculating) return;
-    setIsCalculating(true);
+    console.log("Starting cost calculation...");
     try {
       const updatedEquipmentList = await calculationService.calculateEquipmentCosts(equipmentList);
-      const { updatedIngredients, updatedIntermediateItems } = await calculationService.calculateIngredientsAndIntermediates(updatedEquipmentList);
-
       setEquipmentList(updatedEquipmentList);
-      
-      const preservedIngredients = updatedIngredients.map(ingredient => {
-        const existingIngredient = ingredients.find(i => i.name === ingredient.name);
-        if (manuallyOverriddenItems.has(ingredient.name) && ingredient.type === 'Intermediate') {
-          return {
-            ...ingredient,
-            cost: existingIngredient?.cost || ingredient.cost,
-            isManuallyOverridden: true
-          };
-        }
-        return ingredient;
-      });
-
-      setIngredients(preservedIngredients);
-      setIntermediateItems(updatedIntermediateItems);
-
-      setPendingCostUpdates(prev => {
-        const newPendingCosts = { ...prev };
-        preservedIngredients.forEach(item => {
-          if (manuallyOverriddenItems.has(item.name) && item.type === 'Intermediate') {
-            newPendingCosts[item.name] = item.cost;
-          }
-        });
-        return newPendingCosts;
-      });
+      updateStates();
     } catch (error) {
       console.error("Error during calculation:", error);
-    } finally {
-      setIsCalculating(false);
     }
-  }, [equipmentList, isCalculating, ingredients, manuallyOverriddenItems]);
-
+  }, [equipmentList, updateStates]);
   const debouncedCalculateCosts = useCallback(() => {
     if (calculationTimeoutRef.current) {
       clearTimeout(calculationTimeoutRef.current);
     }
     calculationTimeoutRef.current = setTimeout(() => {
       calculateCosts();
-    }, 500);
+    }, 300);
   }, [calculateCosts]);
 
-  const addEquipment = useCallback((item: IDofusItem) => {
-    setEquipmentList(prevList => {
-      const existingItemIndex = prevList.findIndex(eq => eq.ankama_id === item.ankama_id);
-      if (existingItemIndex !== -1) {
-        return prevList.map((eq, index) =>
-          index === existingItemIndex
-            ? { ...eq, amount: eq.amount + 1 }
-            : eq
-        );
-      } else {
-        const newItem: ICraftemItem = {
-          ...item,
-          amount: 1,
-          costPerUnit: 0,
-          sellPrice: 0,
-          profit: 0
-        };
-        return [...prevList, newItem];
-      }
-    });
-  }, []);
-
-  const removeEquipment = useCallback((ankama_id: number) => {
-    setEquipmentList(prevList => prevList.filter(item => item.ankama_id !== ankama_id));
-  }, []);
-
-  const updateEquipment = useCallback((ankama_id: number, field: 'amount' | 'sellPrice', value: number) => {
-    setPendingEquipmentUpdates(prev => ({
-      ...prev,
-      [ankama_id]: { ...prev[ankama_id], [field]: value }
-    }));
-  }, []);
-
-  const finalizeEquipmentUpdate = useCallback((ankama_id: number) => {
-    setPendingEquipmentUpdates(prev => {
-      const { [ankama_id]: pendingUpdate, ...rest } = prev;
-      if (pendingUpdate) {
-        setEquipmentList(prevList => {
-          const updatedList = prevList.map(item =>
-            item.ankama_id === ankama_id
-              ? { ...item, ...pendingUpdate }
-              : item
-          ).filter(item => item.amount > 0);
-          return updatedList;
-        });
-        // Trigger recalculation after updating equipment
-        debouncedCalculateCosts();
-      }
-      return rest;
-    });
-  }, [debouncedCalculateCosts]);
-
-  const updateIngredientCost = useCallback((name: string, cost: number) => {
-    setPendingCostUpdates(prev => ({ ...prev, [name]: cost }));
-  }, []);
-
-  const updateIntermediateItemCost = useCallback((name: string, cost: number) => {
-    setPendingCostUpdates(prev => ({ ...prev, [name]: cost }));
-  }, []);
-
-  const finalizeCostUpdate = useCallback((name: string) => {
-    setPendingCostUpdates(prev => {
-      const pendingCost = prev[name];
-      if (pendingCost !== undefined) {
-        const intermediateItem = intermediateItems.find(item => item.name === name);
-        if (intermediateItem) {
-          setManuallyOverriddenItems(prevSet => new Set(prevSet).add(name));
-          setIngredients(prevIngredients => [
-            ...prevIngredients,
-            {
-              name: intermediateItem.name,
-              amount: intermediateItem.amount,
-              cost: pendingCost,
-              type: 'Intermediate',
-              isManuallyOverridden: true
-            }
-          ]);
-          setIntermediateItems(prevIntermediates => 
-            prevIntermediates.filter(item => item.name !== name)
-          );
-        } else {
-          setIngredients(prevIngredients => 
-            prevIngredients.map(item => 
-              item.name === name
-                ? { ...item, cost: pendingCost, isManuallyOverridden: true }
-                : item
-            )
-          );
-        }
-        
-        calculationService.setUserCost(name, pendingCost);
-        debouncedCalculateCosts();
-        return prev;
-      }
-      return prev;
-    });
-  }, [intermediateItems, debouncedCalculateCosts]);
-
-
-  const hasEquipmentListChanged = useCallback((prevList: ICraftemItem[], currentList: ICraftemItem[]) => {
+  const hasEquipmentListChanged = useCallback((prevList: ICraftedItem[], currentList: ICraftedItem[]) => {
     if (prevList.length !== currentList.length) return true;
     return prevList.some((prevItem, index) => {
       const currentItem = currentList[index];
@@ -179,19 +51,71 @@ export const useCalculation = () => {
     }
   }, [equipmentList, debouncedCalculateCosts, hasEquipmentListChanged]);
 
+  const addEquipment = useCallback((item: IDofusItem) => {
+    console.log("Adding equipment:", item);
+    setEquipmentList(prevList => {
+      const existingItemIndex = prevList.findIndex(eq => eq.ankama_id === item.ankama_id);
+      if (existingItemIndex !== -1) {
+        return prevList.map((eq, index) =>
+          index === existingItemIndex
+            ? { ...eq, amount: eq.amount + 1 }
+            : eq
+        );
+      } else {
+        const newItem: ICraftedItem = {
+          ankama_id: item.ankama_id,
+          name: item.name,
+          amount: 1,
+          costPerUnit: 0,
+          sellPrice: 0,
+          profit: 0
+        };
+        return [...prevList, newItem];
+      }
+    });
+  }, []);
+
+  const removeEquipment = useCallback((ankama_id: number) => {
+    console.log("Removing equipment:", ankama_id);
+    setEquipmentList(prevList => prevList.filter(item => item.ankama_id !== ankama_id));
+  }, []);
+
+  const updateEquipment = useCallback((ankama_id: number, field: 'amount' | 'sellPrice', value: number) => {
+    console.log("Updating equipment:", ankama_id, field, value);
+    setEquipmentList(prevList => 
+      prevList.map(item => 
+        item.ankama_id === ankama_id ? { ...item, [field]: value } : item
+      )
+    );
+  }, []);
+
+  const updateIngredientCost = useCallback((name: string, cost: number) => {
+    console.log("Updating ingredient cost:", name, cost);
+    calculationService.setUserCost(name, cost);
+    updateStates();
+    calculateCosts();
+  }, [updateStates, calculateCosts]);
+
+  const updateIntermediateItemCost = useCallback((name: string, cost: number) => {
+    console.log("Updating intermediate item cost:", name, cost);
+    calculationService.setUserCost(name, cost);
+    const updatedIntermediateItems = calculationService.getIntermediateItems();
+    const updatedIngredients = calculationService.getIngredients();
+    console.log("Updated intermediate items:", updatedIntermediateItems);
+    console.log("Updated ingredients:", updatedIngredients);
+    setIntermediateItems(updatedIntermediateItems);
+    setIngredients(updatedIngredients);
+    calculateCosts();
+  }, [calculateCosts]);
+
   return {
-    equipmentList,
-    ingredients,
-    intermediateItems,
-    updateEquipment,
-    finalizeEquipmentUpdate,
+    equipmentList: equipmentList || [],
+    ingredients: ingredients || [],
+    intermediateItems: intermediateItems || [],
     addEquipment,
     removeEquipment,
+    updateEquipment,
     updateIngredientCost,
     updateIntermediateItemCost,
-    finalizeCostUpdate,
-    pendingCostUpdates,
-    pendingEquipmentUpdates,
-    isCalculating,
   };
 };

@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 
-export interface ICraftemItem {
+export interface ICraftedItem {
   id?: number;
   ankama_id: number;
   name: string;
@@ -28,11 +28,12 @@ export interface ISale {
 }
 
 export interface IIntermediateItem {
-  name: string;
-  amount: number;
-  cost: number;
-  level: number;
-}
+    name: string;
+    amount: number;
+    cost: number;
+    level: number;
+    isManuallyOverridden: boolean;
+  }
 
 export interface IDofusItem {
   ankama_id: number;
@@ -52,7 +53,7 @@ export interface IDataFile {
 }
 
 export interface DofusDatabase extends Dexie {
-  equipment: Dexie.Table<ICraftemItem, number>;
+  equipment: Dexie.Table<ICraftedItem, number>;
   ingredients: Dexie.Table<IIngredient, number>;
   sales: Dexie.Table<ISale, number>;
 }

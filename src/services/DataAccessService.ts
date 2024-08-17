@@ -1,22 +1,12 @@
 // src/services/DataAccessService.ts
 
 import axios from 'axios';
-
-export interface DofusItem {
-  ankama_id: number;
-  name: string;
-  level: number;
-  type: {
-    name: string;
-    id: number;
-  };
-  recipe?: any[]; // We'll define this more precisely if needed later
-}
+import { IDofusItem } from '../types';
 
 interface DataFile {
   filename: string;
   url: string;
-  data: DofusItem[];
+  data: IDofusItem[];
 }
 
 class DataAccessService {
@@ -61,8 +51,8 @@ class DataAccessService {
     }
   }
 
-  searchItems(searchTerm: string, dataType?: 'equipment' | 'resources' | 'consumables'): DofusItem[] {
-    let results: DofusItem[] = [];
+  searchItems(searchTerm: string, dataType?: 'equipment' | 'resources' | 'consumables'): IDofusItem[] {
+    let results: IDofusItem[] = [];
     
     if (dataType) {
       const file = this.dataFiles.find(f => f.filename.includes(dataType));
@@ -83,7 +73,7 @@ class DataAccessService {
     return results;
   }
 
-  getItemDetails(ankamaId: number): DofusItem | undefined {
+  getItemDetails(ankamaId: number): IDofusItem | undefined {
     for (const file of this.dataFiles) {
       const item = file.data.find(item => item.ankama_id === ankamaId);
       if (item) return item;
