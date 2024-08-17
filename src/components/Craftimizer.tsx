@@ -41,16 +41,16 @@ const Craftimizer: React.FC<CraftimizerProps> = ({ selectedItem }) => {
   }
 
   return (
-    <div className="flex h-full space-x-4">
+    <div className="flex h-full space-x-4 overflow-hidden p-4">
       <div className="flex flex-col w-1/2 space-y-4 overflow-hidden">
-        <div className="flex-1 overflow-hidden min-h-[200px]">
+        <div className="flex-1 overflow-hidden">
           <EquipmentList 
             equipmentList={equipmentList}
             updateEquipment={updateEquipment}
             removeEquipment={removeEquipment}
           />
         </div>
-        <div className="flex-1 overflow-hidden min-h-[200px]">
+        <div className="flex-1 overflow-hidden">
           <IntermediateItemsList 
             intermediateItems={intermediateItems}
             updateIntermediateItemCost={updateIntermediateItemCost}

@@ -67,25 +67,26 @@ const SalesTracker: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground">
-      <div className="p-2">
+    <div className="flex flex-col h-full bg-background text-foreground overflow-hidden p-4">
+      <div className="flex-shrink-0 mb-4">
         <h2 className="text-xl font-bold">Sales Tracker</h2>
       </div>
       <div className="flex-grow overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item Name</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Cost Price</TableHead>
-              <TableHead>Sell Price</TableHead>
-              <TableHead>Added Date</TableHead>
-              <TableHead>Sell Date</TableHead>
-              <TableHead>Profit</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <div className="rounded-md border border-border">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow>
+                <TableHead>Item Name</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Cost Price</TableHead>
+                <TableHead>Sell Price</TableHead>
+                <TableHead>Added Date</TableHead>
+                <TableHead>Sell Date</TableHead>
+                <TableHead>Profit</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {sales.map((sale) => (
               <TableRow key={sale.id}>
                 <TableCell>{sale.itemName}</TableCell>
@@ -122,29 +123,30 @@ const SalesTracker: React.FC = () => {
                     onBlur={() => handleBlur(sale.id!, 'sellDate')}
                   />
                 </TableCell>
-                <TableCell>{sale.profit.toFixed(2)}</TableCell>
+                <TableCell>{sale.profit.toFixed(0)}</TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline">Actions</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
-                        Add to Craftimizer
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(sale)}>
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(sale.id!)}>
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="relative">Actions</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="z-50 bg-background">
+                        <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
+                          Add to Craftimizer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(sale)}>
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(sale.id!)}>
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

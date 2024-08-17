@@ -71,25 +71,24 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
-      <div className="p-4">
+      <div className="p-0 flex-shrink-0">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold">Dofus Craftimizer</h1>
             <SearchBar onItemSelect={handleSearchItemSelect} existingEquipment={existingEquipment} />
           </div>
           <Button onClick={toggleDarkMode} variant="outline">
             {isDarkMode ? 'Light Mode' : 'Dark Mode'}
           </Button>
         </div>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-[calc(100vh-6rem)]">
           <TabsList>
             <TabsTrigger value="craftimizer">Craftimizer</TabsTrigger>
             <TabsTrigger value="salestracker">Sales Tracker</TabsTrigger>
           </TabsList>
-          <TabsContent value="craftimizer">
+          <TabsContent value="craftimizer" className="h-full overflow-hidden ">
             <Craftimizer selectedItem={selectedItem} />
           </TabsContent>
-          <TabsContent value="salestracker">
+          <TabsContent value="salestracker" className="h-full overflow-hidden">
             <SalesTracker />
           </TabsContent>
         </Tabs>

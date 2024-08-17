@@ -38,21 +38,20 @@ const IngredientList: React.FC<IngredientListProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
-      <div className="p-2">
+      <div className="flex-shrink-1 p-2">
         <h2 className="text-xl font-bold">Ingredients</h2>
       </div>
-      <div className="flex-grow overflow-auto">
-        <div className="rounded-md border border-border h-full">
+      <div className="flex-grow overflow-auto rounded-md border border-border h-full">
           <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
-              <TableRow className="border-b border-border">
-                <TableHead className="text-muted-foreground py-1 px-2">Name</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Amount</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Cost</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Type</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <TableHeader className="sticky top-0 bg-background z-10">
+            <TableRow>
+              <TableHead className="w-[200px]">Name</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Cost</TableHead>
+              <TableHead>Type</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
               {sortedIngredients.map((ingredient) => (
                 <TableRow 
                   key={ingredient.name} 
@@ -79,7 +78,6 @@ const IngredientList: React.FC<IngredientListProps> = ({
           </Table>
         </div>
       </div>
-    </div>
   );
 };
 
