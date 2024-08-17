@@ -90,19 +90,15 @@ export const useCalculation = () => {
   }, []);
 
   const updateIngredientCost = useCallback((name: string, cost: number) => {
-    console.log("Updating ingredient cost:", name, cost);
     calculationService.setUserCost(name, cost);
     updateStates();
     calculateCosts();
   }, [updateStates, calculateCosts]);
 
   const updateIntermediateItemCost = useCallback((name: string, cost: number) => {
-    console.log("Updating intermediate item cost:", name, cost);
     calculationService.setUserCost(name, cost);
     const updatedIntermediateItems = calculationService.getIntermediateItems();
     const updatedIngredients = calculationService.getIngredients();
-    console.log("Updated intermediate items:", updatedIntermediateItems);
-    console.log("Updated ingredients:", updatedIngredients);
     setIntermediateItems(updatedIntermediateItems);
     setIngredients(updatedIngredients);
     calculateCosts();

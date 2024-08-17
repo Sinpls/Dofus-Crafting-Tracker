@@ -29,12 +29,6 @@ const Craftimizer: React.FC<CraftimizerProps> = ({ selectedItem }) => {
     }
   }, [selectedItem, addEquipment]);
 
-  console.log("Craftimizer rendering:", {
-    equipmentListLength: equipmentList.length,
-    intermediateItemsLength: intermediateItems.length,
-    ingredientsLength: ingredients.length
-  });
-
   if (!equipmentList || !intermediateItems || !ingredients) {
     console.error("One or more lists are undefined");
     return <div>Error: Data is not available</div>;
@@ -42,7 +36,7 @@ const Craftimizer: React.FC<CraftimizerProps> = ({ selectedItem }) => {
 
   return (
     <div className="flex h-full space-x-4 overflow-hidden p-4">
-      <div className="flex flex-col w-1/2 space-y-4 overflow-hidden">
+      <div className="flex flex-col w-1/2 space-y-2 overflow-hidden">
         <div className="flex-1 overflow-hidden">
           <CraftedItemList 
             equipmentList={equipmentList}

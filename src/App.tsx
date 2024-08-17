@@ -82,8 +82,8 @@ const App: React.FC = () => {
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-[calc(100vh-6rem)]">
           <TabsList>
-            <TabsTrigger value="craftimizer">Craftimizer</TabsTrigger>
-            <TabsTrigger value="salestracker">Sales Tracker</TabsTrigger>
+            <TabsTrigger value="craftimizer">Calculator</TabsTrigger>
+            <TabsTrigger value="salestracker">Tracker</TabsTrigger>
           </TabsList>
           <TabsContent value="craftimizer" className="h-full overflow-hidden ">
             <Craftimizer selectedItem={selectedItem} />

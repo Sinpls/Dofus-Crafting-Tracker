@@ -114,7 +114,7 @@ The project is built using TypeScript, Vite, Tailwind CSS, Electron, and the sha
 
 ### 5. Craftimizer Integration
 - Modified useCalculation hook to export addEquipment function
-- Allows adding items from SalesTracker back to Craftimizer
+- Allows adding items from SalesTracker back to Craftimizer (THIS IS CURRENTLY NOT FUNCTIONAL)
 
 ### 6. UI Components
 - Integrated shadcn/ui library components
@@ -126,6 +126,14 @@ The project is built using TypeScript, Vite, Tailwind CSS, Electron, and the sha
 - Sell Date can remain empty (null) if the sale hasn't been made yet
 
 ### Next Steps
+
+0. - Fix the Importing of an item back into craftimizer from salestracker
+   - Remove the export to Sales button on each row and instead have a single button for the complete list to the right of 'Crafted Items'
+   - Improve padding and button layour of Calculator and Tracker tab buttons
+   - Place the Craftimizer Search bar in the craftimizer component instead of App.tsx
+   - Fix crafted items amount resetting to 2 when swapping between the calculator and tracker tabs.
+   The crafteditemlist doesnt seem to persist. When moving back to the calaculator tab, the add equipment command gets executed twice.
+
 1. Add search and filtering capabilities:
    - Implement a search box for filtering items by name
    - Add sorting functionality for columns
