@@ -11,7 +11,7 @@ interface EquipmentListProps {
   removeEquipment: (ankama_id: number) => void;
 }
 
-const EquipmentList: React.FC<EquipmentListProps> = ({ 
+const CraftedItemList: React.FC<EquipmentListProps> = ({ 
   equipmentList, 
   updateEquipment, 
   removeEquipment
@@ -54,7 +54,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({
   return (
     <div className="flex flex-col h-full bg-background text-foreground ">
       <div className="flex-shrink-1 p-2">
-        <h2 className="text-xl font-bold">Equipment List</h2>
+        <h2 className="text-xl font-bold">Crafted Items</h2>
       </div>
       <div className="flex-grow overflow-auto rounded-md border border-border h-full">
           <Table>
@@ -125,4 +125,4 @@ const EquipmentList: React.FC<EquipmentListProps> = ({
   );
 };
 
-export default EquipmentList;
+export default CraftedItemList;

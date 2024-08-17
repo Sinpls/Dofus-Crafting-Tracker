@@ -48,8 +48,7 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
               <TableHead className="w-[200px]">Name</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Cost</TableHead>
-              <TableHead>Depth</TableHead>
-              <TableHead>Overridden</TableHead>
+              <TableHead>Recipe Depth</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -73,7 +72,6 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
                     />
                   </TableCell>
                   <TableCell className="py-0.5 px-2">{item.level}</TableCell>
-                  <TableCell className="py-0.5 px-2">{item.isManuallyOverridden ? 'Yes' : 'No'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

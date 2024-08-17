@@ -1,7 +1,7 @@
 // Craftimizer.tsx
 
 import React, { useEffect } from 'react';
-import EquipmentList from './Craftimizer/EquipmentList';
+import CraftedItemList from './Craftimizer/CraftedItemList';
 import IngredientList from './Craftimizer/IngredientList';
 import IntermediateItemsList from './Craftimizer/IntermediateItemsList';
 import { useCalculation } from '../hooks/useCalculation';
@@ -44,7 +44,7 @@ const Craftimizer: React.FC<CraftimizerProps> = ({ selectedItem }) => {
     <div className="flex h-full space-x-4 overflow-hidden p-4">
       <div className="flex flex-col w-1/2 space-y-4 overflow-hidden">
         <div className="flex-1 overflow-hidden">
-          <EquipmentList 
+          <CraftedItemList 
             equipmentList={equipmentList}
             updateEquipment={updateEquipment}
             removeEquipment={removeEquipment}
