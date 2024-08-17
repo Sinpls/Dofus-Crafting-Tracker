@@ -1,5 +1,3 @@
-// IntermediateItemsList.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../@/components/ui/table"
 import { Input } from "../../../@/components/ui/input"
@@ -20,12 +18,7 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
     console.log("IntermediateItemsList received new items:", intermediateItems);
   }, [intermediateItems]);
 
-  const sortedIntermediateItems = [...(intermediateItems || [])].sort((a, b) => {
-    if (a.level !== b.level) {
-      return a.level - b.level;
-    }
-    return (a.name || '').localeCompare(b.name || '');
-  });
+  const sortedIntermediateItems = [...(intermediateItems || [])].sort((a, b) => a.level - b.level);
 
   const handleChange = (name: string, value: string) => {
     setLocalCosts(prev => ({ ...prev, [name]: value }));
@@ -56,7 +49,7 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
                 <TableHead className="text-muted-foreground py-1 px-2">Name</TableHead>
                 <TableHead className="text-muted-foreground py-1 px-2">Amount</TableHead>
                 <TableHead className="text-muted-foreground py-1 px-2">Cost</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Level</TableHead>
+                <TableHead className="text-muted-foreground py-1 px-2">Depth</TableHead>
                 <TableHead className="text-muted-foreground py-1 px-2">Overridden</TableHead>
               </TableRow>
             </TableHeader>

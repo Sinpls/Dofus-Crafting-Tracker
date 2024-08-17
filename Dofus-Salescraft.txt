@@ -2,9 +2,6 @@ Dofus-Salescraft
 ├── .gitattributes
 ├── .gitignore
 ├── components.json
-├── config
-│   ├── database.sql
-│   └── webpack.config.js
 ├── Dofus-Salescraft.txt
 ├── electron
 │   ├── database.ts

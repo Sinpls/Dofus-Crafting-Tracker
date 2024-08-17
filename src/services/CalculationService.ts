@@ -10,8 +10,8 @@ class CalculationService {
   private ingredients: { [key: string]: IIngredient } = {};
   private itemRecipes: { [key: string]: IDofusItem['recipe'] } = {};
 
-  async calculateItemCost(item: IDofusItem, amount: number): Promise<number> {
-    console.log(`Calculating cost for ${item.name}, amount: ${amount}`);
+  async calculateItemCost(item: IDofusItem, amount: number, depth: number = 0): Promise<number> {
+    console.log(`Calculating cost for ${item.name}, amount: ${amount}, depth: ${depth}`);
     const itemName = item.name;
 
     if (this.userSetCosts[itemName] !== undefined) {
@@ -31,11 +31,11 @@ class CalculationService {
       for (const ingredient of item.recipe) {
         const ingredientDetails = await dataAccessService.getItemDetails(ingredient.item_ankama_id);
         if (ingredientDetails) {
-          const ingredientCost = await this.calculateItemCost(ingredientDetails, ingredient.quantity * amount);
+          const ingredientCost = await this.calculateItemCost(ingredientDetails, ingredient.quantity * amount, depth + 1);
           totalCost += ingredientCost;
           console.log(`Ingredient ${ingredientDetails.name} cost: ${ingredientCost}`);
 
-          this.updateIngredientOrIntermediate(ingredientDetails, ingredient.quantity * amount, ingredientCost);
+          this.updateIngredientOrIntermediate(ingredientDetails, ingredient.quantity * amount, ingredientCost, depth + 1);
         }
       }
     } else {
@@ -49,8 +49,8 @@ class CalculationService {
     return totalCost;
   }
 
-  private updateIngredientOrIntermediate(item: IDofusItem, amount: number, cost: number) {
-    console.log(`Updating ingredient/intermediate: ${item.name}, amount: ${amount}, cost: ${cost}`);
+  private updateIngredientOrIntermediate(item: IDofusItem, amount: number, cost: number, depth: number) {
+    console.log(`Updating ingredient/intermediate: ${item.name}, amount: ${amount}, cost: ${cost}, depth: ${depth}`);
     const itemName = item.name;
     if (item.recipe && item.recipe.length > 0) {
       // It's an intermediate item
@@ -59,7 +59,7 @@ class CalculationService {
           name: itemName,
           amount: amount,
           cost: this.userSetCosts[itemName] !== undefined ? this.userSetCosts[itemName] : cost / amount,
-          level: item.level,
+          level: depth,
           isManuallyOverridden: this.userSetCosts[itemName] !== undefined
         };
       } else {
@@ -68,6 +68,7 @@ class CalculationService {
           existingItem.amount += amount;
           existingItem.cost = (existingItem.cost * existingItem.amount + cost) / (existingItem.amount + amount);
         }
+        existingItem.level = Math.max(existingItem.level, depth);
       }
       console.log(`Updated intermediate item: ${JSON.stringify(this.intermediateItems[itemName])}`);
     } else {
@@ -90,6 +91,7 @@ class CalculationService {
       console.log(`Updated ingredient: ${JSON.stringify(this.ingredients[itemName])}`);
     }
   }
+
   setUserCost(itemName: string, cost: number): void {
     console.log(`Setting user cost for ${itemName}: ${cost}`);
     
@@ -222,14 +224,13 @@ class CalculationService {
   getIntermediateItems(): IIntermediateItem[] {
     const items = Object.values(this.intermediateItems);
     console.log("Getting intermediate items:", items);
-    return items;
+    return items.sort((a, b) => a.level - b.level);  // Sort by level in descending order
   }
 
   getIngredients(): IIngredient[] {
     console.log("Getting ingredients:", Object.values(this.ingredients));
     return Object.values(this.ingredients);
   }
-
 
   clearCalculations(): void {
     console.log("Clearing previous calculations");
