@@ -1,94 +1,151 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../@/components/ui/table"
-import { Input } from "../../@/components/ui/input"
-import { Button } from "../../@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../@/components/ui/table";
+import { Input } from "../../@/components/ui/input";
+import { Button } from "../../@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../@/components/ui/dropdown-menu";
 import { ISale } from '../types';
+import { db } from '../services/DatabaseService';
+import { useCalculation } from '../hooks/useCalculation';
 
-export const SalesTracker: React.FC = () => {
+const SalesTracker: React.FC = () => {
   const [sales, setSales] = useState<ISale[]>([]);
-  const [newSale, setNewSale] = useState<Omit<ISale, 'id'>>({
-    itemId: 0,
-    quantity: 0,
-    price: 0,
-    date: new Date()
-  });
+  const [localValues, setLocalValues] = useState<{ [key: string]: string }>({});
+  const { addEquipment } = useCalculation();
 
   useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        const salesData = await window.electronAPI.getSales();
-        setSales(salesData);
-      } catch (error) {
-        console.error('Failed to fetch sales:', error);
-      }
-    };
-
-    fetchSales();
+    loadSales();
   }, []);
 
-  const handleAddSale = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const addedSale = await window.electronAPI.addSale(newSale);
-      setSales([...sales, { ...newSale, id: addedSale }]);
-      setNewSale({ itemId: 0, quantity: 0, price: 0, date: new Date() });
-    } catch (error) {
-      console.error('Failed to add sale:', error);
+  const loadSales = async () => {
+    const loadedSales = await db.getSales();
+    setSales(loadedSales);
+  };
+
+  const handleChange = (id: number, field: keyof ISale, value: string) => {
+    setLocalValues(prev => ({
+      ...prev,
+      [`${id}-${field}`]: value
+    }));
+  };
+
+  const handleBlur = async (id: number, field: keyof ISale) => {
+    const value = localValues[`${id}-${field}`];
+    if (value !== undefined) {
+      let updatedValue: number | Date | null = null;
+      if (field === 'sellDate') {
+        updatedValue = value ? new Date(value) : null;
+      } else if (field !== 'itemName' && field !== 'addedDate') {
+        updatedValue = Number(value);
+      }
+      await db.updateSale(id, { [field]: updatedValue });
+      loadSales();
     }
   };
 
+  const handleDelete = async (id: number) => {
+    await db.deleteSale(id);
+    loadSales();
+  };
+
+  const handleDuplicate = async (sale: ISale) => {
+    const { id, ...saleWithoutId } = sale;
+    await db.addSale({
+      ...saleWithoutId,
+      addedDate: new Date() // Set new added date for the duplicate
+    });
+    loadSales();
+  };
+
+  const handleAddToCraftimizer = (itemName: string) => {
+    addEquipment({ name: itemName, ankama_id: 0, level: 0, type: { name: '', id: 0 } });
+  };
+
+  const formatDate = (date: Date | string | undefined | null) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
+  };
+
   return (
-    <div className="p-4 bg-background text-foreground">
-      <h2 className="text-2xl font-bold mb-4">Sales Tracker</h2>
-      <form onSubmit={handleAddSale} className="mb-4 space-y-2">
-        <Input
-          type="number"
-          placeholder="Item ID"
-          value={newSale.itemId}
-          onChange={(e) => setNewSale({ ...newSale, itemId: Number(e.target.value) })}
-        />
-        <Input
-          type="number"
-          placeholder="Quantity"
-          value={newSale.quantity}
-          onChange={(e) => setNewSale({ ...newSale, quantity: Number(e.target.value) })}
-        />
-        <Input
-          type="number"
-          placeholder="Price"
-          value={newSale.price}
-          onChange={(e) => setNewSale({ ...newSale, price: Number(e.target.value) })}
-        />
-        <Input
-          type="date"
-          value={newSale.date.toISOString().split('T')[0]}
-          onChange={(e) => setNewSale({ ...newSale, date: new Date(e.target.value) })}
-        />
-        <Button type="submit">Add Sale</Button>
-      </form>
-      <div className="rounded-md border border-border">
+    <div className="flex flex-col h-full bg-background text-foreground">
+      <div className="p-2">
+        <h2 className="text-xl font-bold">Sales Tracker</h2>
+      </div>
+      <div className="flex-grow overflow-auto">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border">
-              <TableHead className="text-muted-foreground">Item ID</TableHead>
-              <TableHead className="text-muted-foreground">Quantity</TableHead>
-              <TableHead className="text-muted-foreground">Price</TableHead>
-              <TableHead className="text-muted-foreground">Date</TableHead>
+            <TableRow>
+              <TableHead>Item Name</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Cost Price</TableHead>
+              <TableHead>Sell Price</TableHead>
+              <TableHead>Added Date</TableHead>
+              <TableHead>Sell Date</TableHead>
+              <TableHead>Profit</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sales.map((sale) => (
-              <TableRow key={sale.id} className="border-b border-border hover:bg-muted/50">
-                <TableCell>{sale.itemId}</TableCell>
-                <TableCell>{sale.quantity}</TableCell>
-                <TableCell>{sale.price}</TableCell>
-                <TableCell>{new Date(sale.date).toLocaleDateString()}</TableCell>
+              <TableRow key={sale.id}>
+                <TableCell>{sale.itemName}</TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    value={localValues[`${sale.id}-quantity`] ?? sale.quantity}
+                    onChange={(e) => handleChange(sale.id!, 'quantity', e.target.value)}
+                    onBlur={() => handleBlur(sale.id!, 'quantity')}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    value={localValues[`${sale.id}-costPrice`] ?? sale.costPrice}
+                    onChange={(e) => handleChange(sale.id!, 'costPrice', e.target.value)}
+                    onBlur={() => handleBlur(sale.id!, 'costPrice')}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    value={localValues[`${sale.id}-sellPrice`] ?? sale.sellPrice}
+                    onChange={(e) => handleChange(sale.id!, 'sellPrice', e.target.value)}
+                    onBlur={() => handleBlur(sale.id!, 'sellPrice')}
+                  />
+                </TableCell>
+                <TableCell>{formatDate(sale.addedDate)}</TableCell>
+                <TableCell>
+                  <Input
+                    type="date"
+                    value={localValues[`${sale.id}-sellDate`] ?? (sale.sellDate ? new Date(sale.sellDate).toISOString().split('T')[0] : '')}
+                    onChange={(e) => handleChange(sale.id!, 'sellDate', e.target.value)}
+                    onBlur={() => handleBlur(sale.id!, 'sellDate')}
+                  />
+                </TableCell>
+                <TableCell>{sale.profit.toFixed(2)}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline">Actions</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
+                        Add to Craftimizer
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDuplicate(sale)}>
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(sale.id!)}>
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-      {/* TODO: Add SalesChart component here */}
     </div>
   );
 };

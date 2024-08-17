@@ -87,4 +87,58 @@ The project is built using TypeScript, Vite, Tailwind CSS, Electron, and the sha
 - Implement integration tests for database operations
 - Conduct thorough UI testing for the new SalesTracker component
 
-This design document outlines the plan for implementing the SalesTracker feature in the Dofus-Salescraft application. It provides a roadmap for development while considering the current project structure and technologies in use.
+## Current Implementation Status
+
+### 1. Tab System
+- Implemented a tab-based navigation in the main App component
+- Users can switch between Craftimizer and SalesTracker
+
+### 2. SalesTracker Component
+- Created a new React component for SalesTracker
+- Implemented in `src/components/SalesTracker/SalesTracker.tsx`
+- Features:
+  - Display a list of sales with all required columns (Item Name, Quantity, Cost Price, Sell Price, Added Date, Sell Date, Profit)
+  - In-place editing for Quantity, Cost Price, Sell Price, and Sell Date
+  - Delete sales
+  - Duplicate sales (with a new Added Date)
+  - Add items back to the Craftimizer
+
+### 3. Data Export
+- Implemented functionality to export crafted items from Craftimizer to SalesTracker
+- Exports include: Item name, Amount, Cost price, Sell price, Current date (as Added Date)
+
+### 4. Persistent Storage
+- Updated DatabaseService to handle sales-related operations
+- Implemented in `src/services/DatabaseService.ts`
+- Uses IndexedDB via Dexie.js for SalesTracker data storage
+
+### 5. Craftimizer Integration
+- Modified useCalculation hook to export addEquipment function
+- Allows adding items from SalesTracker back to Craftimizer
+
+### 6. UI Components
+- Integrated shadcn/ui library components
+- Implemented dropdown menu for row actions in SalesTracker
+
+### 7. Date Handling
+- Improved date handling and formatting in SalesTracker
+- Added Date is set to the current date when exporting from Craftimizer
+- Sell Date can remain empty (null) if the sale hasn't been made yet
+
+### Next Steps
+1. Add search and filtering capabilities:
+   - Implement a search box for filtering items by name
+   - Add sorting functionality for columns
+
+2. Implement summary statistics calculation and display:
+   - Calculate and display the sum of profit made
+   - Calculate and display the total turnover
+
+3. (Optional) Integrate Dexie.js Query API for advanced analysis features:
+   - Implement advanced querying capabilities
+   - Add features like quick turnover analysis or highest profit percentage per item
+
+4. Refine user experience:
+   - Implement more advanced filtering options
+   - Add data visualization features (e.g., charts, graphs)
+   - Develop an export feature for sales data

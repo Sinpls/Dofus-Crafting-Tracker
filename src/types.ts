@@ -21,12 +21,14 @@ export interface IIngredient {
 
 export interface ISale {
   id?: number;
-  itemId: number;
+  itemName: string;
   quantity: number;
-  price: number;
-  date: Date;
+  costPrice: number;
+  sellPrice: number;
+  addedDate: Date;
+  sellDate: Date | null;
+  profit: number;
 }
-
 export interface IIntermediateItem {
     name: string;
     amount: number;

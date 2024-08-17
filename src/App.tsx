@@ -1,19 +1,22 @@
-// App.tsx
+// src/App.tsx
 
 import React, { useState, useEffect } from 'react';
 import Craftimizer from './components/Craftimizer';
+import SalesTracker from './components/SalesTracker';
 import SearchBar from './components/Craftimizer/SearchBar';
 import { dataAccessService} from './services/DataAccessService';
 import { IDofusItem } from './types';
 import { useCalculation } from './hooks/useCalculation';
 import './globals.css';
 import { Button } from "../@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../@/components/ui/tabs";
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<IDofusItem | null>(null);
+  const [activeTab, setActiveTab] = useState('craftimizer');
   
   const {
     equipmentList,
@@ -50,6 +53,7 @@ const App: React.FC = () => {
 
   const handleSearchItemSelect = (item: IDofusItem) => {
     setSelectedItem(item);
+    setActiveTab('craftimizer');
   };
 
   const existingEquipment = equipmentList.reduce((acc, item) => {
@@ -65,8 +69,6 @@ const App: React.FC = () => {
     return <div className="text-red-500">{error}</div>;
   }
 
-  console.log("App rendering. equipmentList length:", equipmentList.length);
-
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
       <div className="p-4">
@@ -79,9 +81,18 @@ const App: React.FC = () => {
             {isDarkMode ? 'Light Mode' : 'Dark Mode'}
           </Button>
         </div>
-      </div>
-      <div className="flex-grow overflow-hidden p-4 pb-8">
-        <Craftimizer selectedItem={selectedItem} />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="craftimizer">Craftimizer</TabsTrigger>
+            <TabsTrigger value="salestracker">Sales Tracker</TabsTrigger>
+          </TabsList>
+          <TabsContent value="craftimizer">
+            <Craftimizer selectedItem={selectedItem} />
+          </TabsContent>
+          <TabsContent value="salestracker">
+            <SalesTracker />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

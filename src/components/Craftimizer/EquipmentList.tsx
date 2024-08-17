@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Input } from "../../../@/components/ui/input"
 import { Button } from "../../../@/components/ui/button"
 import { ICraftedItem } from '../../types';
+import { db } from '../../services/DatabaseService';
 
 interface EquipmentListProps {
   equipmentList: ICraftedItem[];
@@ -34,6 +35,22 @@ const EquipmentList: React.FC<EquipmentListProps> = ({
     }
   };
 
+  const handleExportToSalesTracker = async (item: ICraftedItem) => {
+    try {
+      await db.addSale({
+        itemName: item.name,
+        quantity: item.amount,
+        costPrice: item.costPerUnit,
+        sellPrice: item.sellPrice,
+        addedDate: new Date(),
+        sellDate: null,
+        profit: (item.sellPrice - item.costPerUnit) * item.amount
+      });
+      console.log(`Exported ${item.name} to Sales Tracker`);
+    } catch (error) {
+      console.error('Failed to export to Sales Tracker:', error);
+    }
+  };
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <div className="p-2">
@@ -90,6 +107,14 @@ const EquipmentList: React.FC<EquipmentListProps> = ({
                       size="sm"
                     >
                       Remove
+                    </Button>
+                    <Button 
+                      onClick={() => handleExportToSalesTracker(item)}
+                      variant="outline"
+                      size="sm"
+                      className="ml-2"
+                    >
+                      Export to Sales
                     </Button>
                   </TableCell>
                 </TableRow>
