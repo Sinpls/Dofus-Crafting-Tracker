@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../@/components/ui/table";
 import { Input } from "../../@/components/ui/input";
 import { Button } from "../../@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../@/components/ui/dropdown-menu";
-import { ISale } from '../types';
+import { ISale, IDofusItem } from '../types';
 import { db } from '../services/DatabaseService';
-import { useCalculation } from '../hooks/useCalculation';
 
-const SalesTracker: React.FC = () => {
+interface SalesTrackerProps {
+  addCraftedItem: (item: IDofusItem | { name: string; ankama_id?: number }) => Promise<void>;
+}
+
+const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [sales, setSales] = useState<ISale[]>([]);
   const [localValues, setLocalValues] = useState<{ [key: string]: string }>({});
-  const { addCraftedItem } = useCalculation();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterSold, setFilterSold] = useState<boolean | null>(null);
 
   useEffect(() => {
     loadSales();
@@ -51,13 +55,13 @@ const SalesTracker: React.FC = () => {
     const { id, ...saleWithoutId } = sale;
     await db.addSale({
       ...saleWithoutId,
-      addedDate: new Date() // Set new added date for the duplicate
+      addedDate: new Date()
     });
     loadSales();
   };
 
   const handleAddToCraftimizer = (itemName: string) => {
-    addCraftedItem({ name: itemName, ankama_id: 0, level: 0, type: { name: '', id: 0 } });
+    addCraftedItem({ name: itemName });
   };
 
   const formatDate = (date: Date | string | undefined | null) => {
@@ -66,17 +70,73 @@ const SalesTracker: React.FC = () => {
     return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
   };
 
+  const filteredSales = useMemo(() => {
+    return sales.filter(sale => {
+      const matchesSearch = sale.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSoldFilter = filterSold === null || 
+        (filterSold && sale.sellDate !== null) || 
+        (!filterSold && sale.sellDate === null);
+      return matchesSearch && matchesSoldFilter;
+    });
+  }, [sales, searchTerm, filterSold]);
+
+  const totalProfit = useMemo(() => {
+    return filteredSales.reduce((sum, sale) => sum + (sale.sellDate ? sale.profit : 0), 0);
+  }, [filteredSales]);
+
+  const totalTurnover = useMemo(() => {
+    return filteredSales.reduce((sum, sale) => sum + (sale.sellDate ? sale.sellPrice * sale.quantity : 0), 0);
+  }, [filteredSales]);
+
+
   return (
-    <div className="flex flex-col h-full bg-background text-foreground overflow-hidden p-4">
-      <div className="flex-shrink-0 mb-4">
-        <h2 className="text-xl font-bold">Sales Tracker</h2>
+    <div className="flex flex-col h-full space-y-4 overflow-hidden bg-background text-foreground">
+      <div className="flex-shrink-0">
+        <div className="flex items-center space-x-4">
+          <Input
+            placeholder="Search items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-64 bg-background text-foreground border-input"
+          />
+          <Button
+            onClick={() => setFilterSold(null)}
+            variant={filterSold === null ? "default" : "outline"}
+            className="bg-primary text-primary-foreground"
+          >
+            All
+          </Button>
+          <Button
+            onClick={() => setFilterSold(true)}
+            variant={filterSold === true ? "default" : "outline"}
+            className="bg-primary text-primary-foreground"
+          >
+            Sold
+          </Button>
+          <Button
+            onClick={() => setFilterSold(false)}
+            variant={filterSold === false ? "default" : "outline"}
+            className="bg-primary text-primary-foreground"
+          >
+            Unsold
+          </Button>
+        </div>
+      </div>
+      <div className="flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold">Sales Tracker</h2>
+          <div>
+            <span className="mr-4">Total Profit: {totalProfit.toFixed(0)}</span>
+            <span>Total Turnover: {totalTurnover.toFixed(0)}</span>
+          </div>
+        </div>
       </div>
       <div className="flex-grow overflow-auto">
         <div className="rounded-md border border-border">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
+          <Table className="table-custom">
+            <TableHeader>
               <TableRow>
-                <TableHead>Item Name</TableHead>
+                <TableHead className="w-[200px]">Item Name</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Cost Price</TableHead>
                 <TableHead>Sell Price</TableHead>
@@ -87,49 +147,53 @@ const SalesTracker: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {sales.map((sale) => (
-              <TableRow key={sale.id}>
-                <TableCell>{sale.itemName}</TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    value={localValues[`${sale.id}-quantity`] ?? sale.quantity}
-                    onChange={(e) => handleChange(sale.id!, 'quantity', e.target.value)}
-                    onBlur={() => handleBlur(sale.id!, 'quantity')}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    value={localValues[`${sale.id}-costPrice`] ?? sale.costPrice}
-                    onChange={(e) => handleChange(sale.id!, 'costPrice', e.target.value)}
-                    onBlur={() => handleBlur(sale.id!, 'costPrice')}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    value={localValues[`${sale.id}-sellPrice`] ?? sale.sellPrice}
-                    onChange={(e) => handleChange(sale.id!, 'sellPrice', e.target.value)}
-                    onBlur={() => handleBlur(sale.id!, 'sellPrice')}
-                  />
-                </TableCell>
-                <TableCell>{formatDate(sale.addedDate)}</TableCell>
-                <TableCell>
-                  <Input
-                    type="date"
-                    value={localValues[`${sale.id}-sellDate`] ?? (sale.sellDate ? new Date(sale.sellDate).toISOString().split('T')[0] : '')}
-                    onChange={(e) => handleChange(sale.id!, 'sellDate', e.target.value)}
-                    onBlur={() => handleBlur(sale.id!, 'sellDate')}
-                  />
-                </TableCell>
-                <TableCell>{sale.profit.toFixed(0)}</TableCell>
-                <TableCell>
+              {filteredSales.map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell>{sale.itemName}</TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={localValues[`${sale.id}-quantity`] ?? sale.quantity}
+                      onChange={(e) => handleChange(sale.id!, 'quantity', e.target.value)}
+                      onBlur={() => handleBlur(sale.id!, 'quantity')}
+                      className="w-20 h-6 px-1 bg-background text-foreground border-input"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={localValues[`${sale.id}-costPrice`] ?? sale.costPrice}
+                      onChange={(e) => handleChange(sale.id!, 'costPrice', e.target.value)}
+                      onBlur={() => handleBlur(sale.id!, 'costPrice')}
+                      className="w-24 h-6 px-1 bg-background text-foreground border-input"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={localValues[`${sale.id}-sellPrice`] ?? sale.sellPrice}
+                      onChange={(e) => handleChange(sale.id!, 'sellPrice', e.target.value)}
+                      onBlur={() => handleBlur(sale.id!, 'sellPrice')}
+                      className="w-24 h-6 px-1 bg-background text-foreground border-input"
+                    />
+                  </TableCell>
+                  <TableCell>{formatDate(sale.addedDate)}</TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      value={localValues[`${sale.id}-sellDate`] ?? (sale.sellDate ? new Date(sale.sellDate).toISOString().split('T')[0] : '')}
+                      onChange={(e) => handleChange(sale.id!, 'sellDate', e.target.value)}
+                      onBlur={() => handleBlur(sale.id!, 'sellDate')}
+                      className="w-32 h-6 px-1 bg-background text-foreground border-input"
+                    />
+                  </TableCell>
+                  <TableCell>{sale.profit.toFixed(0)}</TableCell>
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="relative">Actions</Button>
+                        <Button variant="outline" size="sm" className="bg-secondary text-secondary-foreground">Actions</Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="z-50 bg-background">
+                      <DropdownMenuContent className="bg-popover text-popover-foreground">
                         <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
                           Add to Craftimizer
                         </DropdownMenuItem>

@@ -1,14 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ICraftedItem, IIngredient, IIntermediateItem, IDofusItem } from '../types';
 import { calculationService } from '../services/CalculationService';
+import { dataAccessService } from '../services/DataAccessService';
 
 export const useCalculation = () => {
   const [craftedItemList, setCraftedItemList] = useState<ICraftedItem[]>([]);
   const [ingredients, setIngredients] = useState<IIngredient[]>([]);
   const [intermediateItems, setIntermediateItems] = useState<IIntermediateItem[]>([]);
   const calculationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousCraftedItemListRef = useRef<ICraftedItem[]>([]);
-
+  const isCalculationNeededRef = useRef(false);
 
   const updateStates = useCallback(() => {
     setIngredients(calculationService.getIngredients());
@@ -16,15 +16,19 @@ export const useCalculation = () => {
   }, []);
 
   const calculateCosts = useCallback(async () => {
+    if (!isCalculationNeededRef.current) return;
+
     console.log("Starting cost calculation...");
     try {
       const updatedCraftedItemList = await calculationService.calculateCraftedItemCosts(craftedItemList);
       setCraftedItemList(updatedCraftedItemList);
       updateStates();
+      isCalculationNeededRef.current = false;
     } catch (error) {
       console.error("Error during calculation:", error);
     }
   }, [craftedItemList, updateStates]);
+
   const debouncedCalculateCosts = useCallback(() => {
     if (calculationTimeoutRef.current) {
       clearTimeout(calculationTimeoutRef.current);
@@ -34,27 +38,29 @@ export const useCalculation = () => {
     }, 300);
   }, [calculateCosts]);
 
-  const hasCraftedItemListChanged = useCallback((prevList: ICraftedItem[], currentList: ICraftedItem[]) => {
-    if (prevList.length !== currentList.length) return true;
-    return prevList.some((prevItem, index) => {
-      const currentItem = currentList[index];
-      return prevItem.ankama_id !== currentItem.ankama_id ||
-             prevItem.amount !== currentItem.amount ||
-             prevItem.sellPrice !== currentItem.sellPrice;
-    });
-  }, []);
-
   useEffect(() => {
-    if (hasCraftedItemListChanged(previousCraftedItemListRef.current, craftedItemList)) {
+    if (isCalculationNeededRef.current) {
       debouncedCalculateCosts();
-      previousCraftedItemListRef.current = craftedItemList;
     }
-  }, [craftedItemList, debouncedCalculateCosts, hasCraftedItemListChanged]);
+  }, [craftedItemList, debouncedCalculateCosts]);
 
-  const addCraftedItem = useCallback((item: IDofusItem) => {
+  const addCraftedItem = useCallback(async (item: IDofusItem | { name: string, ankama_id?: number }) => {
     console.log("Adding item:", item);
+    let ankamaId = item.ankama_id;
+    
+    if (!ankamaId) {
+      const searchResults = await dataAccessService.searchItems(item.name);
+      const matchedItem = searchResults.find(result => result.name.toLowerCase() === item.name.toLowerCase());
+      if (matchedItem) {
+        ankamaId = matchedItem.ankama_id;
+      } else {
+        console.error(`Item not found: ${item.name}`);
+        return;
+      }
+    }
+
     setCraftedItemList(prevList => {
-      const existingItemIndex = prevList.findIndex(eq => eq.ankama_id === item.ankama_id);
+      const existingItemIndex = prevList.findIndex(eq => eq.ankama_id === ankamaId);
       if (existingItemIndex !== -1) {
         return prevList.map((eq, index) =>
           index === existingItemIndex
@@ -63,7 +69,7 @@ export const useCalculation = () => {
         );
       } else {
         const newItem: ICraftedItem = {
-          ankama_id: item.ankama_id,
+          ankama_id: ankamaId!,
           name: item.name,
           amount: 1,
           costPerUnit: 0,
@@ -73,11 +79,13 @@ export const useCalculation = () => {
         return [...prevList, newItem];
       }
     });
+    isCalculationNeededRef.current = true;
   }, []);
 
   const removeCraftedItem = useCallback((ankama_id: number) => {
     console.log("Removing item:", ankama_id);
     setCraftedItemList(prevList => prevList.filter(item => item.ankama_id !== ankama_id));
+    isCalculationNeededRef.current = true;
   }, []);
 
   const updateCraftedItem = useCallback((ankama_id: number, field: 'amount' | 'sellPrice', value: number) => {
@@ -87,27 +95,27 @@ export const useCalculation = () => {
         item.ankama_id === ankama_id ? { ...item, [field]: value } : item
       )
     );
+    isCalculationNeededRef.current = true;
   }, []);
 
   const updateIngredientCost = useCallback((name: string, cost: number) => {
     calculationService.setUserCost(name, cost);
     updateStates();
-    calculateCosts();
-  }, [updateStates, calculateCosts]);
+    isCalculationNeededRef.current = true;
+    debouncedCalculateCosts();
+  }, [updateStates, debouncedCalculateCosts]);
 
   const updateIntermediateItemCost = useCallback((name: string, cost: number) => {
     calculationService.setUserCost(name, cost);
-    const updatedIntermediateItems = calculationService.getIntermediateItems();
-    const updatedIngredients = calculationService.getIngredients();
-    setIntermediateItems(updatedIntermediateItems);
-    setIngredients(updatedIngredients);
-    calculateCosts();
-  }, [calculateCosts]);
+    updateStates();
+    isCalculationNeededRef.current = true;
+    debouncedCalculateCosts();
+  }, [updateStates, debouncedCalculateCosts]);
 
   return {
-    craftedItemList: craftedItemList || [],
-    ingredients: ingredients || [],
-    intermediateItems: intermediateItems || [],
+    craftedItemList,
+    ingredients,
+    intermediateItems,
     addCraftedItem,
     removeCraftedItem,
     updateCraftedItem,

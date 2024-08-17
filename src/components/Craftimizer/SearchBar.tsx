@@ -61,14 +61,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onItemSelect, existingCraftedItem
           handleSearch();
         }}
         onKeyPress={handleKeyPress}
-        className="w-64"
+        className="w-64 bg-background text-foreground border-input"
       />
       {isDropdownOpen && results.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-[80vh] overflow-y-auto">
           {results.map((item) => (
             <div
               key={item.ankama_id}
-              className="p-2 hover:bg-muted/50 cursor-pointer"
+              className="p-2 hover:bg-muted/50 cursor-pointer text-foreground"
               onClick={() => handleItemClick(item)}
             >
               {item.name} - {item.type.name}
@@ -84,5 +84,4 @@ const SearchBar: React.FC<SearchBarProps> = ({ onItemSelect, existingCraftedItem
     </div>
   );
 };
-
 export default SearchBar;
