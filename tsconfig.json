@@ -16,6 +16,7 @@
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "esModuleInterop": true,
+    
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*"],

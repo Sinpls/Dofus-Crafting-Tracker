@@ -2,7 +2,7 @@
   "name": "dofus-salescraft",
   "version": "1.0.0",
   "description": "Dofus Salescraft application",
-  "main": "dist/electron/main.js",
+  "main": "dist-electron/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "concurrently \"npm run dev:react\" \"npm run dev:electron\"",
