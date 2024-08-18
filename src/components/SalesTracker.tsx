@@ -1,30 +1,82 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../@/components/ui/table";
 import { Input } from "../../@/components/ui/input";
 import { Button } from "../../@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../@/components/ui/dropdown-menu";
 import { ISale, IDofusItem } from '../types';
-import { db } from '../services/DatabaseService';
+import { db, setupDatabase } from '../services/DatabaseService';
 
 interface SalesTrackerProps {
   addCraftedItem: (item: IDofusItem | { name: string; ankama_id?: number }) => Promise<void>;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [sales, setSales] = useState<ISale[]>([]);
+  const [totalSales, setTotalSales] = useState(0);
   const [localValues, setLocalValues] = useState<{ [key: string]: string }>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSold, setFilterSold] = useState<boolean | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalProfit, setTotalProfit] = useState(0);
+  const [totalTurnover, setTotalTurnover] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSales();
+    const initDatabase = async () => {
+      try {
+        await setupDatabase();
+        await loadSales();
+        await loadTotals();
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        setError('Failed to initialize database. Please refresh the page and try again.');
+      }
+    };
+
+    initDatabase();
   }, []);
 
-  const loadSales = async () => {
-    const loadedSales = await db.getSales();
-    setSales(loadedSales);
-  };
+  useEffect(() => {
+    if (db.isOpen()) {
+      loadSales();
+      loadTotals();
+    }
+  }, [currentPage, searchTerm, filterSold]);
 
+  const loadSales = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const filters: Partial<ISale> = {};
+      if (searchTerm) filters.itemName = searchTerm;
+      if (filterSold !== null) filters.sellDate = filterSold ? new Date() : null;
+
+      console.log('Fetching sales with filters:', filters);
+      const { sales: loadedSales, total } = await db.getSales(currentPage, ITEMS_PER_PAGE, filters);
+      console.log('Loaded sales:', loadedSales);
+      console.log('Total sales:', total);
+
+      setSales(loadedSales);
+      setTotalSales(total);
+    } catch (err) {
+      console.error('Error loading sales:', err);
+      setError('Failed to load sales. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const loadTotals = async () => {
+    try {
+      const { totalProfit, totalTurnover } = await db.getTotalProfitAndTurnover();
+      setTotalProfit(totalProfit);
+      setTotalTurnover(totalTurnover);
+    } catch (err) {
+      console.error('Error loading totals:', err);
+    }
+  };
   const handleChange = (id: number, field: keyof ISale, value: string) => {
     setLocalValues(prev => ({
       ...prev,
@@ -43,12 +95,14 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       }
       await db.updateSale(id, { [field]: updatedValue });
       loadSales();
+      loadTotals();
     }
   };
 
   const handleDelete = async (id: number) => {
     await db.deleteSale(id);
     loadSales();
+    loadTotals();
   };
 
   const handleDuplicate = async (sale: ISale) => {
@@ -58,6 +112,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       addedDate: new Date()
     });
     loadSales();
+    loadTotals();
   };
 
   const handleAddToCraftimizer = (itemName: string) => {
@@ -70,25 +125,15 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
   };
 
-  const filteredSales = useMemo(() => {
-    return sales.filter(sale => {
-      const matchesSearch = sale.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSoldFilter = filterSold === null || 
-        (filterSold && sale.sellDate !== null) || 
-        (!filterSold && sale.sellDate === null);
-      return matchesSearch && matchesSoldFilter;
-    });
-  }, [sales, searchTerm, filterSold]);
+  const totalPages = Math.ceil(totalSales / ITEMS_PER_PAGE);
+  
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  const totalProfit = useMemo(() => {
-    return filteredSales.reduce((sum, sale) => sum + (sale.sellDate ? sale.profit : 0), 0);
-  }, [filteredSales]);
-
-  const totalTurnover = useMemo(() => {
-    return filteredSales.reduce((sum, sale) => sum + (sale.sellDate ? sale.sellPrice * sale.quantity : 0), 0);
-  }, [filteredSales]);
-
-
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
   return (
     <div className="flex flex-col h-full space-y-4 overflow-hidden bg-background text-foreground">
       <div className="flex-shrink-0">
@@ -147,8 +192,13 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSales.map((sale) => (
-                <TableRow key={sale.id}>
+              {sales.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center">No sales found</TableCell>
+                </TableRow>
+              ) : (
+                sales.map((sale) => (
+                  <TableRow key={sale.id}>
                   <TableCell>{sale.itemName}</TableCell>
                   <TableCell>
                     <Input
@@ -207,9 +257,33 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
+        </div>
+      </div>
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, totalSales)} of {totalSales} entries
+        </div>
+        <div className="flex space-x-2">
+          <Button
+            onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+            variant="outline"
+            size="sm"
+          >
+            Previous
+          </Button>
+          <Button
+            onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+            disabled={currentPage === totalPages}
+            variant="outline"
+            size="sm"
+          >
+            Next
+          </Button>
         </div>
       </div>
     </div>

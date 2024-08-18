@@ -43,9 +43,6 @@
     - Improved consistency across components
 
 ### Next Steps
-1. Implement more advanced filtering options
-2. Add more data visualization features in the Charts tab
-3. Develop an export feature for sales data
-4. Implement pagination or virtual scrolling for large datasets
-5. Add unit tests and integration tests
-6. Optimize database queries for better performance
+1. Implement pagination or virtual scrolling for large datasets
+2. Optimize database queries for better performance
+3. Make the database storage location relative to the executable, same for the JSON files

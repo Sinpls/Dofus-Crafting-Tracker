@@ -1,4 +1,3 @@
-// src/components/Charts.tsx
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { db } from '../services/DatabaseService';
@@ -6,11 +5,17 @@ import { ISale } from '../types';
 
 const Charts: React.FC = () => {
   const [salesData, setSalesData] = useState<ISale[]>([]);
+  const [totalSales, setTotalSales] = useState<number>(0);
 
   useEffect(() => {
     const loadSalesData = async () => {
-      const sales = await db.getSales();
-      setSalesData(sales);
+      try {
+        const { sales, total } = await db.getSales(1, 1000); // Fetch up to 1000 sales for the chart
+        setSalesData(sales);
+        setTotalSales(total);
+      } catch (error) {
+        console.error('Error loading sales data:', error);
+      }
     };
     loadSalesData();
   }, []);
@@ -55,6 +60,7 @@ const Charts: React.FC = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <div>Total number of sales: {totalSales}</div>
     </div>
   );
 };
