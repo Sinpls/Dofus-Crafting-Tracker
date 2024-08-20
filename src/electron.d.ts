@@ -1,12 +1,12 @@
-import { IEquipment, IIngredient, ISale } from '../electron/database';
+import { ICraftedItem, IIngredient, ISale, DofusDatabase } from '../src/types';
 
 declare global {
   interface Window {
     electronAPI: {
-      getEquipment: () => Promise<IEquipment[]>;
-      addEquipment: (equipment: IEquipment) => Promise<number>;
-      updateEquipment: (id: number, updates: Partial<IEquipment>) => Promise<number>;
-      deleteEquipment: (id: number) => Promise<void>;
+      getCraftedItem: () => Promise<ICraftedItem[]>;
+      addCraftedItem: (craftedItem: ICraftedItem) => Promise<number>;
+      updateCraftedItem: (id: number, updates: Partial<ICraftedItem>) => Promise<number>;
+      deleteCraftedItem: (id: number) => Promise<void>;
 
       getIngredients: () => Promise<IIngredient[]>;
       addIngredient: (ingredient: IIngredient) => Promise<number>;

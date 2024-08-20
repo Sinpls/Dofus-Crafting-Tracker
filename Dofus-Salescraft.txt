@@ -1,13 +1,23 @@
 Dofus-Salescraft
 ├── .gitattributes
 ├── .gitignore
+├── @
+│   ├── components
+│   │   └── ui
+│   │       ├── button.tsx
+│   │       ├── dropdown-menu.tsx
+│   │       ├── input.tsx
+│   │       ├── table.tsx
+│   │       └── tabs.tsx
+│   └── lib
+│       └── utils.ts
 ├── components.json
 ├── Dofus-Salescraft.txt
 ├── electron
 │   ├── database.ts
 │   ├── main.ts
 │   └── preload.ts
-├── Features.txt
+├── Features.md
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.js
@@ -24,35 +34,26 @@ Dofus-Salescraft
 │   ├── App.tsx
 │   ├── components
 │   │   ├── Craftimizer
-│   │   │   ├── EquipmentList.tsx
+│   │   │   ├── CraftedItemList.tsx
 │   │   │   ├── IngredientList.tsx
 │   │   │   ├── IntermediateItemsList.tsx
 │   │   │   └── SearchBar.tsx
 │   │   ├── Craftimizer.tsx
-│   │   ├── SalesTracker
-│   │   │   ├── SaleForm.tsx
-│   │   │   ├── SalesChart.tsx
-│   │   │   ├── SalesList.tsx
-│   │   │   └── SalesTracker.css
 │   │   ├── SalesTracker.tsx
+│   │   ├── Charts.tsx
 │   │   └── Tabs.tsx
 │   ├── electron.d.ts
 │   ├── globals.css
 │   ├── hooks
 │   │   ├── useCalculation.ts
-│   │   ├── useDataAccess.ts
-│   │   └── useSalesData.ts
+│   │   └── useDataAccess.ts
 │   ├── index.html
 │   ├── index.tsx
 │   ├── services
 │   │   ├── CalculationService.ts
 │   │   ├── DataAccessService.ts
-│   │   ├── DatabaseService.ts
-│   │   └── SalesService.ts
-│   ├── types.ts
-│   └── utils
-│       ├── dateUtils.ts
-│       └── formatters.ts
+│   │   └── DatabaseService.ts
+│   └── types.ts
 ├── tailwind.config.js
 ├── tsconfig.json
 ├── tsconfig.node.json

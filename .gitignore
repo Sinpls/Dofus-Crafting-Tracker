@@ -3,3 +3,5 @@
 /public/data
 /dist
 /dist-electron
+/@
+/.vite

@@ -21,10 +21,13 @@ export interface IIngredient {
 
 export interface ISale {
   id?: number;
-  itemId: number;
+  itemName: string;
   quantity: number;
-  price: number;
-  date: Date;
+  costPrice: number;
+  sellPrice: number;
+  addedDate: Date;
+  sellDate: Date | null;
+  profit: number;
 }
 
 export interface IIntermediateItem {
@@ -53,7 +56,7 @@ export interface IDataFile {
 }
 
 export interface DofusDatabase extends Dexie {
-  equipment: Dexie.Table<ICraftedItem, number>;
+  craftedItem: Dexie.Table<ICraftedItem, number>;
   ingredients: Dexie.Table<IIngredient, number>;
   sales: Dexie.Table<ISale, number>;
 }

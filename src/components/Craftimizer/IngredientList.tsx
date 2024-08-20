@@ -38,46 +38,44 @@ const IngredientList: React.FC<IngredientListProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
-      <div className="p-2">
+      <div className="flex-shrink-1 p-2">
         <h2 className="text-xl font-bold">Ingredients</h2>
       </div>
-      <div className="flex-grow overflow-auto">
-        <div className="rounded-md border border-border h-full">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
-              <TableRow className="border-b border-border">
-                <TableHead className="text-muted-foreground py-1 px-2">Name</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Amount</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Cost</TableHead>
-                <TableHead className="text-muted-foreground py-1 px-2">Type</TableHead>
+      <div className="flex-grow overflow-auto rounded-md border border-border">
+        <Table className="table-custom">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-muted-foreground">Name</TableHead>
+              <TableHead className="text-muted-foreground">Amount</TableHead>
+              <TableHead className="text-muted-foreground">Cost</TableHead>
+              <TableHead className="text-muted-foreground">Type</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedIngredients.map((ingredient) => (
+              <TableRow 
+                key={ingredient.name} 
+                className={`hover:bg-muted/50 ${
+                  ingredient.type === 'Intermediate' ? 'bg-yellow-500/20' : ''
+                }`}
+              >
+                <TableCell>{ingredient.name}</TableCell>
+                <TableCell>{ingredient.amount.toLocaleString()}</TableCell>
+                <TableCell>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={localCosts[ingredient.name] ?? ingredient.cost}
+                    onChange={(e) => handleChange(ingredient.name, e.target.value)}
+                    onBlur={() => handleBlur(ingredient.name)}
+                    className="w-24 bg-background text-foreground border-input"
+                  />
+                </TableCell>
+                <TableCell>{ingredient.type}</TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedIngredients.map((ingredient) => (
-                <TableRow 
-                  key={ingredient.name} 
-                  className={`border-b border-border hover:bg-muted/50 ${
-                    ingredient.type === 'Intermediate' ? 'bg-yellow-500/20' : ''
-                  }`}
-                >
-                  <TableCell className="py-0.5 px-2">{ingredient.name}</TableCell>
-                  <TableCell className="py-0.5 px-2">{ingredient.amount.toLocaleString()}</TableCell>
-                  <TableCell className="py-0.5 px-2">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      value={localCosts[ingredient.name] ?? ingredient.cost}
-                      onChange={(e) => handleChange(ingredient.name, e.target.value)}
-                      onBlur={() => handleBlur(ingredient.name)}
-                      className="w-24 bg-background text-foreground h-6 px-1"
-                    />
-                  </TableCell>
-                  <TableCell className="py-0.5 px-2">{ingredient.type}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
