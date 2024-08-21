@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import { ICraftedItem, IIngredient, ISale, DofusDatabase } from '../types';
+import { joinPaths } from '../utils/pathUtils';
 
 class DofusDatabaseImpl extends Dexie implements DofusDatabase {
   craftedItem!: Dexie.Table<ICraftedItem, number>;
@@ -7,13 +8,14 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
   sales!: Dexie.Table<ISale, number>;
 
   constructor() {
-    super('DofusDatabase');
-    this.version(1).stores({
+    const userDataPath = localStorage.getItem('dataPath') || '';
+    const dbPath = joinPaths(userDataPath, 'dofus-salescraft.db');
+
+    super(dbPath);
+
+    this.version(2).stores({
       craftedItem: '++id, ankama_id, name, amount, sellPrice',
       ingredients: '++id, name, amount, cost, type',
-      sales: '++id, itemName, quantity, costPrice, sellPrice, addedDate, sellDate, profit'
-    });
-    this.version(2).stores({
       sales: '++id, itemName, quantity, costPrice, sellPrice, addedDate, sellDate, profit'
     }).upgrade(tx => {
       return tx.table('sales').toCollection().modify(sale => {

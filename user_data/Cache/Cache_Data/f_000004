@@ -1,0 +1,177 @@
+import { injectQuery as __vite__injectQuery } from "/@vite/client";import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/App.tsx");import { jsxDEV } from "/@id/__x00__react/jsx-dev-runtime";
+import RefreshRuntime from "/@react-refresh";
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot) {
+  if (!window.__vite_plugin_react_preamble_installed__) {
+    throw new Error("@vitejs/plugin-react can't detect preamble. Something is wrong. See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201");
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = (type, id) => {
+    RefreshRuntime.register(type, "E:/Data/Projects/Dofus-Salescraft/src/App.tsx " + id);
+  };
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import __vite__cjsImport3_react from "/@fs/E:/Data/Projects/Dofus-Salescraft/node_modules/.vite/deps/react.js?v=b99ad393"; const useState = __vite__cjsImport3_react["useState"]; const useEffect = __vite__cjsImport3_react["useEffect"];
+import Craftimizer from "/components/Craftimizer.tsx";
+import SalesTracker from "/components/SalesTracker.tsx";
+import Charts from "/components/Charts.tsx";
+import { dataAccessService } from "/services/DataAccessService.ts";
+import { useCalculation } from "/hooks/useCalculation.ts";
+import "/globals.css";
+import { Button } from "/@fs/E:/Data/Projects/Dofus-Salescraft/@/components/ui/button.tsx";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "/@fs/E:/Data/Projects/Dofus-Salescraft/@/components/ui/tabs.tsx";
+const App = () => {
+  _s();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState("craftimizer");
+  const {
+    craftedItemList,
+    ingredients,
+    intermediateItems,
+    addCraftedItem,
+    removeCraftedItem,
+    updateCraftedItem,
+    updateIngredientCost,
+    updateIntermediateItemCost
+  } = useCalculation();
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        await dataAccessService.init();
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Failed to initialize DataAccessService:", err);
+        setError("Failed to initialize application. Please try again.");
+        setIsLoading(false);
+      }
+    };
+    initializeApp();
+  }, []);
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+  if (isLoading) {
+    return /* @__PURE__ */ jsxDEV("div", { className: "text-foreground", children: "Loading..." }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 51,
+      columnNumber: 12
+    }, this);
+  }
+  if (error) {
+    return /* @__PURE__ */ jsxDEV("div", { className: "text-red-500", children: error }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 54,
+      columnNumber: 12
+    }, this);
+  }
+  return /* @__PURE__ */ jsxDEV("div", { className: "min-h-screen flex flex-col bg-background text-foreground", children: /* @__PURE__ */ jsxDEV("div", { className: "p-4 flex-grow", children: /* @__PURE__ */ jsxDEV(Tabs, { value: activeTab, onValueChange: setActiveTab, className: "h-full", children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "flex justify-between items-center mb-4", children: [
+      /* @__PURE__ */ jsxDEV(TabsList, { className: "grid grid-cols-3 w-96 bg-muted", children: [
+        /* @__PURE__ */ jsxDEV(TabsTrigger, { value: "craftimizer", className: "px-4 py-2 data-[state=active]:bg-background", children: "Calculator" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+          lineNumber: 61,
+          columnNumber: 15
+        }, this),
+        /* @__PURE__ */ jsxDEV(TabsTrigger, { value: "salestracker", className: "px-4 py-2 data-[state=active]:bg-background", children: "Tracker" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+          lineNumber: 62,
+          columnNumber: 15
+        }, this),
+        /* @__PURE__ */ jsxDEV(TabsTrigger, { value: "charts", className: "px-4 py-2 data-[state=active]:bg-background", children: "Charts" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+          lineNumber: 63,
+          columnNumber: 15
+        }, this)
+      ] }, void 0, true, {
+        fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+        lineNumber: 60,
+        columnNumber: 13
+      }, this),
+      /* @__PURE__ */ jsxDEV(Button, { onClick: toggleDarkMode, variant: "outline", className: "bg-secondary text-secondary-foreground", children: isDarkMode ? "Light Mode" : "Dark Mode" }, void 0, false, {
+        fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+        lineNumber: 65,
+        columnNumber: 13
+      }, this)
+    ] }, void 0, true, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 59,
+      columnNumber: 11
+    }, this),
+    /* @__PURE__ */ jsxDEV(TabsContent, { value: "craftimizer", className: "h-[calc(100vh-6rem)] overflow-hidden", children: /* @__PURE__ */ jsxDEV(Craftimizer, { craftedItemList, ingredients, intermediateItems, addCraftedItem, removeCraftedItem, updateCraftedItem, updateIngredientCost, updateIntermediateItemCost }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 70,
+      columnNumber: 13
+    }, this) }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 69,
+      columnNumber: 11
+    }, this),
+    /* @__PURE__ */ jsxDEV(TabsContent, { value: "salestracker", className: "h-[calc(100vh-6rem)] overflow-hidden", children: /* @__PURE__ */ jsxDEV(SalesTracker, { addCraftedItem }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 73,
+      columnNumber: 13
+    }, this) }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 72,
+      columnNumber: 11
+    }, this),
+    /* @__PURE__ */ jsxDEV(TabsContent, { value: "charts", className: "h-[calc(100vh-8rem)] overflow-hidden", children: /* @__PURE__ */ jsxDEV(Charts, {}, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 76,
+      columnNumber: 13
+    }, this) }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+      lineNumber: 75,
+      columnNumber: 11
+    }, this)
+  ] }, void 0, true, {
+    fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+    lineNumber: 58,
+    columnNumber: 9
+  }, this) }, void 0, false, {
+    fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+    lineNumber: 57,
+    columnNumber: 7
+  }, this) }, void 0, false, {
+    fileName: "E:/Data/Projects/Dofus-Salescraft/src/App.tsx",
+    lineNumber: 56,
+    columnNumber: 10
+  }, this);
+};
+_s(App, "0oyFFlPtW5nIJbZhIETYGbS6G+c=", false, function() {
+  return [useCalculation];
+});
+_c = App;
+export default App;
+var _c;
+$RefreshReg$(_c, "App");
+if (import.meta.hot) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+  import(
+    /* @vite-ignore */
+    __vite__injectQuery(import.meta.url, 'import')).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("E:/Data/Projects/Dofus-Salescraft/src/App.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports)
+        return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate(currentExports, nextExports);
+      if (invalidateMessage)
+        import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUMsZUFBWSxPQUFNLGVBQWMsV0FBVSx3Q0FDekMsaUNBQUMsZUFDQyxpQkFDQSxhQUNBLG1CQUNBLGdCQUNBLG1CQUNBLG1CQUNBLHNCQUNBLDhCQVJGO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FReUQsS0FUM0Q7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQVdBO0FBQUEsSUFDQSx1QkFBQyxlQUFZLE9BQU0sZ0JBQWUsV0FBVSx3Q0FDMUMsaUNBQUMsZ0JBQWEsa0JBQWQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUE2QyxLQUQvQztBQUFBO0FBQUE7QUFBQTtBQUFBLFdBRUE7QUFBQSxJQUNBLHVCQUFDLGVBQVksT0FBTSxVQUFTLFdBQVUsd0NBQ3BDLGlDQUFDLFlBQUQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUFPLEtBRFQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUVBO0FBQUEsT0E1QkY7QUFBQTtBQUFBO0FBQUE7QUFBQSxTQTZCQSxLQTlCRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFNBK0JBLEtBaENGO0FBQUE7QUFBQTtBQUFBO0FBQUEsU0FpQ0E7QUFFSjtBQUFDTCxHQXZGS0QsS0FBYTtBQUFBLFVBZWJOLGNBQWM7QUFBQTtBQUFBa0MsS0FmZDVCO0FBeUZOLGVBQWVBO0FBQUksSUFBQTRCO0FBQUFDLGFBQUFELElBQUEiLCJuYW1lcyI6WyJ1c2VTdGF0ZSIsInVzZUVmZmVjdCIsIkNyYWZ0aW1pemVyIiwiU2FsZXNUcmFja2VyIiwiQ2hhcnRzIiwiZGF0YUFjY2Vzc1NlcnZpY2UiLCJ1c2VDYWxjdWxhdGlvbiIsIkJ1dHRvbiIsIlRhYnMiLCJUYWJzTGlzdCIsIlRhYnNUcmlnZ2VyIiwiVGFic0NvbnRlbnQiLCJBcHAiLCJfcyIsImlzTG9hZGluZyIsInNldElzTG9hZGluZyIsImVycm9yIiwic2V0RXJyb3IiLCJpc0RhcmtNb2RlIiwic2V0SXNEYXJrTW9kZSIsImFjdGl2ZVRhYiIsInNldEFjdGl2ZVRhYiIsImNyYWZ0ZWRJdGVtTGlzdCIsImluZ3JlZGllbnRzIiwiaW50ZXJtZWRpYXRlSXRlbXMiLCJhZGRDcmFmdGVkSXRlbSIsInJlbW92ZUNyYWZ0ZWRJdGVtIiwidXBkYXRlQ3JhZnRlZEl0ZW0iLCJ1cGRhdGVJbmdyZWRpZW50Q29zdCIsInVwZGF0ZUludGVybWVkaWF0ZUl0ZW1Db3N0IiwiaW5pdGlhbGl6ZUFwcCIsImluaXQiLCJlcnIiLCJjb25zb2xlIiwiZG9jdW1lbnQiLCJkb2N1bWVudEVsZW1lbnQiLCJjbGFzc0xpc3QiLCJhZGQiLCJyZW1vdmUiLCJ0b2dnbGVEYXJrTW9kZSIsIl9jIiwiJFJlZnJlc2hSZWckIl0sInNvdXJjZXMiOlsiQXBwLnRzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgUmVhY3QsIHsgdXNlU3RhdGUsIHVzZUVmZmVjdCB9IGZyb20gJ3JlYWN0JztcclxuaW1wb3J0IENyYWZ0aW1pemVyIGZyb20gJy4vY29tcG9uZW50cy9DcmFmdGltaXplcic7XHJcbmltcG9ydCBTYWxlc1RyYWNrZXIgZnJvbSAnLi9jb21wb25lbnRzL1NhbGVzVHJhY2tlcic7XHJcbmltcG9ydCBDaGFydHMgZnJvbSAnLi9jb21wb25lbnRzL0NoYXJ0cyc7XHJcbmltcG9ydCB7IGRhdGFBY2Nlc3NTZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9EYXRhQWNjZXNzU2VydmljZSc7XHJcbmltcG9ydCB7IHVzZUNhbGN1bGF0aW9uIH0gZnJvbSAnLi9ob29rcy91c2VDYWxjdWxhdGlvbic7XHJcbmltcG9ydCAnLi9nbG9iYWxzLmNzcyc7XHJcbmltcG9ydCB7IEJ1dHRvbiB9IGZyb20gXCIuLi9AL2NvbXBvbmVudHMvdWkvYnV0dG9uXCI7XHJcbmltcG9ydCB7IFRhYnMsIFRhYnNMaXN0LCBUYWJzVHJpZ2dlciwgVGFic0NvbnRlbnQgfSBmcm9tIFwiLi4vQC9jb21wb25lbnRzL3VpL3RhYnNcIjtcclxuXHJcbmNvbnN0IEFwcDogUmVhY3QuRkMgPSAoKSA9PiB7XHJcbiAgY29uc3QgW2lzTG9hZGluZywgc2V0SXNMb2FkaW5nXSA9IHVzZVN0YXRlKHRydWUpO1xyXG4gIGNvbnN0IFtlcnJvciwgc2V0RXJyb3JdID0gdXNlU3RhdGU8c3RyaW5nIHwgbnVsbD4obnVsbCk7XHJcbiAgY29uc3QgW2lzRGFya01vZGUsIHNldElzRGFya01vZGVdID0gdXNlU3RhdGUoZmFsc2UpO1xyXG4gIGNvbnN0IFthY3RpdmVUYWIsIHNldEFjdGl2ZVRhYl0gPSB1c2VTdGF0ZSgnY3JhZnRpbWl6ZXInKTtcclxuXHJcbiAgY29uc3Qge1xyXG4gICAgY3JhZnRlZEl0ZW1MaXN0LFxyXG4gICAgaW5ncmVkaWVudHMsXHJcbiAgICBpbnRlcm1lZGlhdGVJdGVtcyxcclxuICAgIGFkZENyYWZ0ZWRJdGVtLFxyXG4gICAgcmVtb3ZlQ3JhZnRlZEl0ZW0sXHJcbiAgICB1cGRhdGVDcmFmdGVkSXRlbSxcclxuICAgIHVwZGF0ZUluZ3JlZGllbnRDb3N0LFxyXG4gICAgdXBkYXRlSW50ZXJtZWRpYXRlSXRlbUNvc3QsXHJcbiAgfSA9IHVzZUNhbGN1bGF0aW9uKCk7XHJcblxyXG4gIHVzZUVmZmVjdCgoKSA9PiB7XHJcbiAgICBjb25zdCBpbml0aWFsaXplQXBwID0gYXN5bmMgKCkgPT4ge1xyXG4gICAgICB0cnkge1xyXG4gICAgICAgIGF3YWl0IGRhdGFBY2Nlc3NTZXJ2aWNlLmluaXQoKTtcclxuICAgICAgICBzZXRJc0xvYWRpbmcoZmFsc2UpO1xyXG4gICAgICB9IGNhdGNoIChlcnIpIHtcclxuICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gaW5pdGlhbGl6ZSBEYXRhQWNjZXNzU2VydmljZTonLCBlcnIpO1xyXG4gICAgICAgIHNldEVycm9yKCdGYWlsZWQgdG8gaW5pdGlhbGl6ZSBhcHBsaWNhdGlvbi4gUGxlYXNlIHRyeSBhZ2Fpbi4nKTtcclxuICAgICAgICBzZXRJc0xvYWRpbmcoZmFsc2UpO1xyXG4gICAgICB9XHJcbiAgICB9O1xyXG5cclxuICAgIGluaXRpYWxpemVBcHAoKTtcclxuICB9LCBbXSk7XHJcbiAgdXNlRWZmZWN0KCgpID0+IHtcclxuICAgIGlmIChpc0RhcmtNb2RlKSB7XHJcbiAgICAgIGRvY3VtZW50LmRvY3VtZW50RWxlbWVudC5jbGFzc0xpc3QuYWRkKCdkYXJrJyk7XHJcbiAgICB9IGVsc2Uge1xyXG4gICAgICBkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQuY2xhc3NMaXN0LnJlbW92ZSgnZGFyaycpO1xyXG4gICAgfVxyXG4gIH0sIFtpc0RhcmtNb2RlXSk7XHJcblxyXG4gIGNvbnN0IHRvZ2dsZURhcmtNb2RlID0gKCkgPT4ge1xyXG4gICAgc2V0SXNEYXJrTW9kZSghaXNEYXJrTW9kZSk7XHJcbiAgfTtcclxuXHJcbiAgaWYgKGlzTG9hZGluZykge1xyXG4gICAgcmV0dXJuIDxkaXYgY2xhc3NOYW1lPVwidGV4dC1mb3JlZ3JvdW5kXCI+TG9hZGluZy4uLjwvZGl2PjtcclxuICB9XHJcblxyXG4gIGlmIChlcnJvcikge1xyXG4gICAgcmV0dXJuIDxkaXYgY2xhc3NOYW1lPVwidGV4dC1yZWQtNTAwXCI+e2Vycm9yfTwvZGl2PjtcclxuICB9XHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8ZGl2IGNsYXNzTmFtZT1cIm1pbi1oLXNjcmVlbiBmbGV4IGZsZXgtY29sIGJnLWJhY2tncm91bmQgdGV4dC1mb3JlZ3JvdW5kXCI+XHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwicC00IGZsZXgtZ3Jvd1wiPlxyXG4gICAgICAgIDxUYWJzIHZhbHVlPXthY3RpdmVUYWJ9IG9uVmFsdWVDaGFuZ2U9e3NldEFjdGl2ZVRhYn0gY2xhc3NOYW1lPVwiaC1mdWxsXCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImZsZXgganVzdGlmeS1iZXR3ZWVuIGl0ZW1zLWNlbnRlciBtYi00XCI+XHJcbiAgICAgICAgICAgIDxUYWJzTGlzdCBjbGFzc05hbWU9XCJncmlkIGdyaWQtY29scy0zIHctOTYgYmctbXV0ZWRcIj5cclxuICAgICAgICAgICAgICA8VGFic1RyaWdnZXIgdmFsdWU9XCJjcmFmdGltaXplclwiIGNsYXNzTmFtZT1cInB4LTQgcHktMiBkYXRhLVtzdGF0ZT1hY3RpdmVdOmJnLWJhY2tncm91bmRcIj5DYWxjdWxhdG9yPC9UYWJzVHJpZ2dlcj5cclxuICAgICAgICAgICAgICA8VGFic1RyaWdnZXIgdmFsdWU9XCJzYWxlc3RyYWNrZXJcIiBjbGFzc05hbWU9XCJweC00IHB5LTIgZGF0YS1bc3RhdGU9YWN0aXZlXTpiZy1iYWNrZ3JvdW5kXCI+VHJhY2tlcjwvVGFic1RyaWdnZXI+XHJcbiAgICAgICAgICAgICAgPFRhYnNUcmlnZ2VyIHZhbHVlPVwiY2hhcnRzXCIgY2xhc3NOYW1lPVwicHgtNCBweS0yIGRhdGEtW3N0YXRlPWFjdGl2ZV06YmctYmFja2dyb3VuZFwiPkNoYXJ0czwvVGFic1RyaWdnZXI+XHJcbiAgICAgICAgICAgIDwvVGFic0xpc3Q+XHJcbiAgICAgICAgICAgIDxCdXR0b24gb25DbGljaz17dG9nZ2xlRGFya01vZGV9IHZhcmlhbnQ9XCJvdXRsaW5lXCIgY2xhc3NOYW1lPVwiYmctc2Vjb25kYXJ5IHRleHQtc2Vjb25kYXJ5LWZvcmVncm91bmRcIj5cclxuICAgICAgICAgICAgICB7aXNEYXJrTW9kZSA/ICdMaWdodCBNb2RlJyA6ICdEYXJrIE1vZGUnfVxyXG4gICAgICAgICAgICA8L0J1dHRvbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPFRhYnNDb250ZW50IHZhbHVlPVwiY3JhZnRpbWl6ZXJcIiBjbGFzc05hbWU9XCJoLVtjYWxjKDEwMHZoLTZyZW0pXSBvdmVyZmxvdy1oaWRkZW5cIj5cclxuICAgICAgICAgICAgPENyYWZ0aW1pemVyXHJcbiAgICAgICAgICAgICAgY3JhZnRlZEl0ZW1MaXN0PXtjcmFmdGVkSXRlbUxpc3R9XHJcbiAgICAgICAgICAgICAgaW5ncmVkaWVudHM9e2luZ3JlZGllbnRzfVxyXG4gICAgICAgICAgICAgIGludGVybWVkaWF0ZUl0ZW1zPXtpbnRlcm1lZGlhdGVJdGVtc31cclxuICAgICAgICAgICAgICBhZGRDcmFmdGVkSXRlbT17YWRkQ3JhZnRlZEl0ZW19XHJcbiAgICAgICAgICAgICAgcmVtb3ZlQ3JhZnRlZEl0ZW09e3JlbW92ZUNyYWZ0ZWRJdGVtfVxyXG4gICAgICAgICAgICAgIHVwZGF0ZUNyYWZ0ZWRJdGVtPXt1cGRhdGVDcmFmdGVkSXRlbX1cclxuICAgICAgICAgICAgICB1cGRhdGVJbmdyZWRpZW50Q29zdD17dXBkYXRlSW5ncmVkaWVudENvc3R9XHJcbiAgICAgICAgICAgICAgdXBkYXRlSW50ZXJtZWRpYXRlSXRlbUNvc3Q9e3VwZGF0ZUludGVybWVkaWF0ZUl0ZW1Db3N0fVxyXG4gICAgICAgICAgICAvPlxyXG4gICAgICAgICAgPC9UYWJzQ29udGVudD5cclxuICAgICAgICAgIDxUYWJzQ29udGVudCB2YWx1ZT1cInNhbGVzdHJhY2tlclwiIGNsYXNzTmFtZT1cImgtW2NhbGMoMTAwdmgtNnJlbSldIG92ZXJmbG93LWhpZGRlblwiPlxyXG4gICAgICAgICAgICA8U2FsZXNUcmFja2VyIGFkZENyYWZ0ZWRJdGVtPXthZGRDcmFmdGVkSXRlbX0gLz5cclxuICAgICAgICAgIDwvVGFic0NvbnRlbnQ+XHJcbiAgICAgICAgICA8VGFic0NvbnRlbnQgdmFsdWU9XCJjaGFydHNcIiBjbGFzc05hbWU9XCJoLVtjYWxjKDEwMHZoLThyZW0pXSBvdmVyZmxvdy1oaWRkZW5cIj5cclxuICAgICAgICAgICAgPENoYXJ0cyAvPlxyXG4gICAgICAgICAgPC9UYWJzQ29udGVudD5cclxuICAgICAgICA8L1RhYnM+XHJcbiAgICAgIDwvZGl2PlxyXG4gICAgPC9kaXY+XHJcbiAgKTtcclxufVxyXG5cclxuZXhwb3J0IGRlZmF1bHQgQXBwOyJdLCJmaWxlIjoiRTovRGF0YS9Qcm9qZWN0cy9Eb2Z1cy1TYWxlc2NyYWZ0L3NyYy9BcHAudHN4In0=

@@ -1,0 +1,162 @@
+import { injectQuery as __vite__injectQuery } from "/@vite/client";import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/components/Craftimizer/IntermediateItemsList.tsx");import { jsxDEV } from "/@id/__x00__react/jsx-dev-runtime";
+import RefreshRuntime from "/@react-refresh";
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot) {
+  if (!window.__vite_plugin_react_preamble_installed__) {
+    throw new Error("@vitejs/plugin-react can't detect preamble. Something is wrong. See https://github.com/vitejs/vite-plugin-react/pull/11#discussion_r430879201");
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = (type, id) => {
+    RefreshRuntime.register(type, "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx " + id);
+  };
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import __vite__cjsImport3_react from "/@fs/E:/Data/Projects/Dofus-Salescraft/node_modules/.vite/deps/react.js?v=b99ad393"; const useState = __vite__cjsImport3_react["useState"]; const useEffect = __vite__cjsImport3_react["useEffect"];
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "/@fs/E:/Data/Projects/Dofus-Salescraft/@/components/ui/table.tsx";
+import { Input } from "/@fs/E:/Data/Projects/Dofus-Salescraft/@/components/ui/input.tsx";
+const IntermediateItemsList = ({
+  intermediateItems,
+  updateIntermediateItemCost
+}) => {
+  _s();
+  const [localCosts, setLocalCosts] = useState({});
+  useEffect(() => {
+    console.log("IntermediateItemsList received new items:", intermediateItems);
+  }, [intermediateItems]);
+  const sortedIntermediateItems = [...intermediateItems || []].sort((a, b) => a.level - b.level);
+  const handleChange = (name, value) => {
+    setLocalCosts((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  const handleBlur = (name) => {
+    const value = localCosts[name];
+    if (value !== void 0) {
+      const numericValue = value.replace(/^0+/, "");
+      updateIntermediateItemCost(name, numericValue === "" ? 0 : Number(numericValue));
+    }
+  };
+  if (!intermediateItems || intermediateItems.length === 0) {
+    return /* @__PURE__ */ jsxDEV("div", { children: "No intermediate items available" }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+      lineNumber: 36,
+      columnNumber: 12
+    }, this);
+  }
+  return /* @__PURE__ */ jsxDEV("div", { className: "flex flex-col h-full bg-background text-foreground", children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "flex-shrink-1 p-2", children: /* @__PURE__ */ jsxDEV("h2", { className: "text-xl font-bold", children: "Intermediate Items" }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+      lineNumber: 40,
+      columnNumber: 9
+    }, this) }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+      lineNumber: 39,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("div", { className: "flex-grow overflow-auto rounded-md border border-border", children: /* @__PURE__ */ jsxDEV(Table, { className: "table-custom", children: [
+      /* @__PURE__ */ jsxDEV(TableHeader, { children: /* @__PURE__ */ jsxDEV(TableRow, { children: [
+        /* @__PURE__ */ jsxDEV(TableHead, { className: "w-[200px] text-muted-foreground", children: "Name" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 46,
+          columnNumber: 15
+        }, this),
+        /* @__PURE__ */ jsxDEV(TableHead, { className: "text-muted-foreground", children: "Amount" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 47,
+          columnNumber: 15
+        }, this),
+        /* @__PURE__ */ jsxDEV(TableHead, { className: "text-muted-foreground", children: "Cost" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 48,
+          columnNumber: 15
+        }, this),
+        /* @__PURE__ */ jsxDEV(TableHead, { className: "text-muted-foreground", children: "Recipe Depth" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 49,
+          columnNumber: 15
+        }, this)
+      ] }, void 0, true, {
+        fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+        lineNumber: 45,
+        columnNumber: 13
+      }, this) }, void 0, false, {
+        fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+        lineNumber: 44,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV(TableBody, { children: sortedIntermediateItems.map((item) => /* @__PURE__ */ jsxDEV(TableRow, { className: `hover:bg-muted/50 ${item.isManuallyOverridden ? "bg-yellow-500/20" : ""}`, children: [
+        /* @__PURE__ */ jsxDEV(TableCell, { children: item.name }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 54,
+          columnNumber: 17
+        }, this),
+        /* @__PURE__ */ jsxDEV(TableCell, { children: item.amount }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 55,
+          columnNumber: 17
+        }, this),
+        /* @__PURE__ */ jsxDEV(TableCell, { children: /* @__PURE__ */ jsxDEV(Input, { type: "text", inputMode: "numeric", value: localCosts[item.name] ?? item.cost, onChange: (e) => handleChange(item.name, e.target.value), onBlur: () => handleBlur(item.name), className: "w-24 bg-background text-foreground border-input" }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 57,
+          columnNumber: 19
+        }, this) }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 56,
+          columnNumber: 17
+        }, this),
+        /* @__PURE__ */ jsxDEV(TableCell, { children: item.level }, void 0, false, {
+          fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+          lineNumber: 59,
+          columnNumber: 17
+        }, this)
+      ] }, item.name, true, {
+        fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+        lineNumber: 53,
+        columnNumber: 50
+      }, this)) }, void 0, false, {
+        fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+        lineNumber: 52,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+      lineNumber: 43,
+      columnNumber: 9
+    }, this) }, void 0, false, {
+      fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+      lineNumber: 42,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx",
+    lineNumber: 38,
+    columnNumber: 10
+  }, this);
+};
+_s(IntermediateItemsList, "wo6aj+k8h0BP8H2BLH/SD1sDCKg=");
+_c = IntermediateItemsList;
+export default IntermediateItemsList;
+var _c;
+$RefreshReg$(_c, "IntermediateItemsList");
+if (import.meta.hot) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+  import(
+    /* @vite-ignore */
+    __vite__injectQuery(import.meta.url, 'import')).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("E:/Data/Projects/Dofus-Salescraft/src/components/Craftimizer/IntermediateItemsList.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports)
+        return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate(currentExports, nextExports);
+      if (invalidateMessage)
+        import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUFLVixJQUFJLEdBQ2xDLFdBQVUscURBTlo7QUFBQTtBQUFBO0FBQUE7QUFBQSxlQU02RCxLQVAvRDtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBU0E7QUFBQSxRQUNBLHVCQUFDLGFBQVdVLGVBQUtaLFNBQWpCO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFBdUI7QUFBQSxXQWpCbEJZLEtBQUtWLE1BRFo7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQW1CQSxDQUNELEtBdEJIO0FBQUE7QUFBQTtBQUFBO0FBQUEsYUF1QkE7QUFBQSxTQWhDRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBaUNBLEtBbENGO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FtQ0E7QUFBQSxPQXZDRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFNBd0NBO0FBRUo7QUFBRVgsR0F2RUlILHVCQUEyRDtBQUFBOEIsS0FBM0Q5QjtBQXlFTixlQUFlQTtBQUFzQixJQUFBOEI7QUFBQUMsYUFBQUQsSUFBQSIsIm5hbWVzIjpbInVzZVN0YXRlIiwidXNlRWZmZWN0IiwiVGFibGUiLCJUYWJsZUJvZHkiLCJUYWJsZUNlbGwiLCJUYWJsZUhlYWQiLCJUYWJsZUhlYWRlciIsIlRhYmxlUm93IiwiSW5wdXQiLCJJbnRlcm1lZGlhdGVJdGVtc0xpc3QiLCJpbnRlcm1lZGlhdGVJdGVtcyIsInVwZGF0ZUludGVybWVkaWF0ZUl0ZW1Db3N0IiwiX3MiLCJsb2NhbENvc3RzIiwic2V0TG9jYWxDb3N0cyIsImNvbnNvbGUiLCJsb2ciLCJzb3J0ZWRJbnRlcm1lZGlhdGVJdGVtcyIsInNvcnQiLCJhIiwiYiIsImxldmVsIiwiaGFuZGxlQ2hhbmdlIiwibmFtZSIsInZhbHVlIiwicHJldiIsImhhbmRsZUJsdXIiLCJ1bmRlZmluZWQiLCJudW1lcmljVmFsdWUiLCJyZXBsYWNlIiwiTnVtYmVyIiwibGVuZ3RoIiwibWFwIiwiaXRlbSIsImlzTWFudWFsbHlPdmVycmlkZGVuIiwiYW1vdW50IiwiY29zdCIsImUiLCJ0YXJnZXQiLCJfYyIsIiRSZWZyZXNoUmVnJCJdLCJzb3VyY2VzIjpbIkludGVybWVkaWF0ZUl0ZW1zTGlzdC50c3giXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IFJlYWN0LCB7IHVzZVN0YXRlLCB1c2VFZmZlY3QgfSBmcm9tICdyZWFjdCc7XHJcbmltcG9ydCB7IFRhYmxlLCBUYWJsZUJvZHksIFRhYmxlQ2VsbCwgVGFibGVIZWFkLCBUYWJsZUhlYWRlciwgVGFibGVSb3cgfSBmcm9tIFwiLi4vLi4vLi4vQC9jb21wb25lbnRzL3VpL3RhYmxlXCJcclxuaW1wb3J0IHsgSW5wdXQgfSBmcm9tIFwiLi4vLi4vLi4vQC9jb21wb25lbnRzL3VpL2lucHV0XCJcclxuaW1wb3J0IHsgSUludGVybWVkaWF0ZUl0ZW0gfSBmcm9tICcuLi8uLi90eXBlcyc7XHJcblxyXG5pbnRlcmZhY2UgSW50ZXJtZWRpYXRlSXRlbXNMaXN0UHJvcHMge1xyXG4gIGludGVybWVkaWF0ZUl0ZW1zOiBJSW50ZXJtZWRpYXRlSXRlbVtdO1xyXG4gIHVwZGF0ZUludGVybWVkaWF0ZUl0ZW1Db3N0OiAobmFtZTogc3RyaW5nLCBjb3N0OiBudW1iZXIpID0+IHZvaWQ7XHJcbn1cclxuXHJcbmNvbnN0IEludGVybWVkaWF0ZUl0ZW1zTGlzdDogUmVhY3QuRkM8SW50ZXJtZWRpYXRlSXRlbXNMaXN0UHJvcHM+ID0gKHsgXHJcbiAgaW50ZXJtZWRpYXRlSXRlbXMsIFxyXG4gIHVwZGF0ZUludGVybWVkaWF0ZUl0ZW1Db3N0XHJcbn0pID0+IHtcclxuICBjb25zdCBbbG9jYWxDb3N0cywgc2V0TG9jYWxDb3N0c10gPSB1c2VTdGF0ZTx7IFtrZXk6IHN0cmluZ106IHN0cmluZyB9Pih7fSk7XHJcblxyXG4gIHVzZUVmZmVjdCgoKSA9PiB7XHJcbiAgICBjb25zb2xlLmxvZyhcIkludGVybWVkaWF0ZUl0ZW1zTGlzdCByZWNlaXZlZCBuZXcgaXRlbXM6XCIsIGludGVybWVkaWF0ZUl0ZW1zKTtcclxuICB9LCBbaW50ZXJtZWRpYXRlSXRlbXNdKTtcclxuXHJcbiAgY29uc3Qgc29ydGVkSW50ZXJtZWRpYXRlSXRlbXMgPSBbLi4uKGludGVybWVkaWF0ZUl0ZW1zIHx8IFtdKV0uc29ydCgoYSwgYikgPT4gYS5sZXZlbCAtIGIubGV2ZWwpO1xyXG5cclxuICBjb25zdCBoYW5kbGVDaGFuZ2UgPSAobmFtZTogc3RyaW5nLCB2YWx1ZTogc3RyaW5nKSA9PiB7XHJcbiAgICBzZXRMb2NhbENvc3RzKHByZXYgPT4gKHsgLi4ucHJldiwgW25hbWVdOiB2YWx1ZSB9KSk7XHJcbiAgfTtcclxuXHJcbiAgY29uc3QgaGFuZGxlQmx1ciA9IChuYW1lOiBzdHJpbmcpID0+IHtcclxuICAgIGNvbnN0IHZhbHVlID0gbG9jYWxDb3N0c1tuYW1lXTtcclxuICAgIGlmICh2YWx1ZSAhPT0gdW5kZWZpbmVkKSB7XHJcbiAgICAgIGNvbnN0IG51bWVyaWNWYWx1ZSA9IHZhbHVlLnJlcGxhY2UoL14wKy8sICcnKTtcclxuICAgICAgdXBkYXRlSW50ZXJtZWRpYXRlSXRlbUNvc3QobmFtZSwgbnVtZXJpY1ZhbHVlID09PSAnJyA/IDAgOiBOdW1iZXIobnVtZXJpY1ZhbHVlKSk7XHJcbiAgICB9XHJcbiAgfTtcclxuXHJcbiAgaWYgKCFpbnRlcm1lZGlhdGVJdGVtcyB8fCBpbnRlcm1lZGlhdGVJdGVtcy5sZW5ndGggPT09IDApIHtcclxuICAgIHJldHVybiA8ZGl2Pk5vIGludGVybWVkaWF0ZSBpdGVtcyBhdmFpbGFibGU8L2Rpdj47XHJcbiAgfVxyXG5cclxuICByZXR1cm4gKFxyXG4gICAgPGRpdiBjbGFzc05hbWU9XCJmbGV4IGZsZXgtY29sIGgtZnVsbCBiZy1iYWNrZ3JvdW5kIHRleHQtZm9yZWdyb3VuZFwiPlxyXG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cImZsZXgtc2hyaW5rLTEgcC0yXCI+XHJcbiAgICAgICAgPGgyIGNsYXNzTmFtZT1cInRleHQteGwgZm9udC1ib2xkXCI+SW50ZXJtZWRpYXRlIEl0ZW1zPC9oMj5cclxuICAgICAgPC9kaXY+XHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZmxleC1ncm93IG92ZXJmbG93LWF1dG8gcm91bmRlZC1tZCBib3JkZXIgYm9yZGVyLWJvcmRlclwiPlxyXG4gICAgICAgIDxUYWJsZSBjbGFzc05hbWU9XCJ0YWJsZS1jdXN0b21cIj5cclxuICAgICAgICAgIDxUYWJsZUhlYWRlcj5cclxuICAgICAgICAgICAgPFRhYmxlUm93PlxyXG4gICAgICAgICAgICAgIDxUYWJsZUhlYWQgY2xhc3NOYW1lPVwidy1bMjAwcHhdIHRleHQtbXV0ZWQtZm9yZWdyb3VuZFwiPk5hbWU8L1RhYmxlSGVhZD5cclxuICAgICAgICAgICAgICA8VGFibGVIZWFkIGNsYXNzTmFtZT1cInRleHQtbXV0ZWQtZm9yZWdyb3VuZFwiPkFtb3VudDwvVGFibGVIZWFkPlxyXG4gICAgICAgICAgICAgIDxUYWJsZUhlYWQgY2xhc3NOYW1lPVwidGV4dC1tdXRlZC1mb3JlZ3JvdW5kXCI+Q29zdDwvVGFibGVIZWFkPlxyXG4gICAgICAgICAgICAgIDxUYWJsZUhlYWQgY2xhc3NOYW1lPVwidGV4dC1tdXRlZC1mb3JlZ3JvdW5kXCI+UmVjaXBlIERlcHRoPC9UYWJsZUhlYWQ+XHJcbiAgICAgICAgICAgIDwvVGFibGVSb3c+XHJcbiAgICAgICAgICA8L1RhYmxlSGVhZGVyPlxyXG4gICAgICAgICAgPFRhYmxlQm9keT5cclxuICAgICAgICAgICAge3NvcnRlZEludGVybWVkaWF0ZUl0ZW1zLm1hcCgoaXRlbSkgPT4gKFxyXG4gICAgICAgICAgICAgIDxUYWJsZVJvdyBcclxuICAgICAgICAgICAgICAgIGtleT17aXRlbS5uYW1lfSBcclxuICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17YGhvdmVyOmJnLW11dGVkLzUwICR7XHJcbiAgICAgICAgICAgICAgICAgIGl0ZW0uaXNNYW51YWxseU92ZXJyaWRkZW4gPyAnYmcteWVsbG93LTUwMC8yMCcgOiAnJ1xyXG4gICAgICAgICAgICAgICAgfWB9XHJcbiAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgPFRhYmxlQ2VsbD57aXRlbS5uYW1lfTwvVGFibGVDZWxsPlxyXG4gICAgICAgICAgICAgICAgPFRhYmxlQ2VsbD57aXRlbS5hbW91bnR9PC9UYWJsZUNlbGw+XHJcbiAgICAgICAgICAgICAgICA8VGFibGVDZWxsPlxyXG4gICAgICAgICAgICAgICAgICA8SW5wdXRcclxuICAgICAgICAgICAgICAgICAgICB0eXBlPVwidGV4dFwiXHJcbiAgICAgICAgICAgICAgICAgICAgaW5wdXRNb2RlPVwibnVtZXJpY1wiXHJcbiAgICAgICAgICAgICAgICAgICAgdmFsdWU9e2xvY2FsQ29zdHNbaXRlbS5uYW1lXSA/PyBpdGVtLmNvc3R9XHJcbiAgICAgICAgICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiBoYW5kbGVDaGFuZ2UoaXRlbS5uYW1lLCBlLnRhcmdldC52YWx1ZSl9XHJcbiAgICAgICAgICAgICAgICAgICAgb25CbHVyPXsoKSA9PiBoYW5kbGVCbHVyKGl0ZW0ubmFtZSl9XHJcbiAgICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwidy0yNCBiZy1iYWNrZ3JvdW5kIHRleHQtZm9yZWdyb3VuZCBib3JkZXItaW5wdXRcIlxyXG4gICAgICAgICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICAgICAgPC9UYWJsZUNlbGw+XHJcbiAgICAgICAgICAgICAgICA8VGFibGVDZWxsPntpdGVtLmxldmVsfTwvVGFibGVDZWxsPlxyXG4gICAgICAgICAgICAgIDwvVGFibGVSb3c+XHJcbiAgICAgICAgICAgICkpfVxyXG4gICAgICAgICAgPC9UYWJsZUJvZHk+XHJcbiAgICAgICAgPC9UYWJsZT5cclxuICAgICAgPC9kaXY+XHJcbiAgICA8L2Rpdj5cclxuICApO1xyXG59O1xyXG5cclxuZXhwb3J0IGRlZmF1bHQgSW50ZXJtZWRpYXRlSXRlbXNMaXN0OyJdLCJmaWxlIjoiRTovRGF0YS9Qcm9qZWN0cy9Eb2Z1cy1TYWxlc2NyYWZ0L3NyYy9jb21wb25lbnRzL0NyYWZ0aW1pemVyL0ludGVybWVkaWF0ZUl0ZW1zTGlzdC50c3gifQ==

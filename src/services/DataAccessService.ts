@@ -1,12 +1,22 @@
-// src/services/DataAccessService.ts
-
 import axios from 'axios';
 import { IDofusItem } from '../types';
+import { joinPaths } from '../utils/pathUtils';
 
 interface DataFile {
   filename: string;
   url: string;
   data: IDofusItem[];
+}
+
+declare global {
+  interface Window {
+    electronAPI: {
+      getDataPath: () => Promise<string>;
+      fileExists: (path: string) => Promise<boolean>;
+      readFile: (path: string) => Promise<string>;
+      writeFile: (path: string, data: string) => Promise<void>;
+    }
+  }
 }
 
 class DataAccessService {
@@ -17,59 +27,99 @@ class DataAccessService {
   ];
 
   private ingredientCosts: { [key: string]: number } = {};
+  private dataPath: string = '';
 
   async init() {
-    await Promise.all(this.dataFiles.map(file => this.checkAndUpdateFile(file)));
-    this.loadIngredientCosts();
-  }
+    try {
+      this.dataPath = await window.electronAPI.getDataPath();
+      console.log('Data path:', this.dataPath);
+    } catch (error) {
+      console.error('Failed to get data path:', error);
+      throw new Error('Failed to initialize DataAccessService: Unable to get data path');
+    }
 
-  private async checkAndUpdateFile(file: DataFile) {
-    const storedData = localStorage.getItem(file.filename);
-    const storedTimestamp = localStorage.getItem(`${file.filename}_timestamp`);
-
-    if (!storedData || !storedTimestamp || this.isDataStale(storedTimestamp)) {
-      await this.downloadAndStoreFile(file);
-    } else {
-      file.data = JSON.parse(storedData).items;
+    try {
+      await Promise.all(this.dataFiles.map(file => this.checkAndUpdateFile(file)));
+      await this.loadIngredientCosts();
+    } catch (error) {
+      console.error('Failed to initialize data files:', error);
+      throw new Error('Failed to initialize DataAccessService: Unable to load data files');
     }
   }
 
-  private isDataStale(timestamp: string): boolean {
-    const staleThreshold = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    return Date.now() - parseInt(timestamp) > staleThreshold;
+  private async checkAndUpdateFile(file: DataFile) {
+    const filePath = joinPaths(this.dataPath, file.filename);
+    const timestampPath = joinPaths(this.dataPath, `${file.filename}_timestamp`);
+
+    try {
+      const fileExists = await window.electronAPI.fileExists(filePath);
+      const timestampExists = await window.electronAPI.fileExists(timestampPath);
+
+      if (!fileExists || !timestampExists || await this.isDataStale(timestampPath)) {
+        await this.downloadAndStoreFile(file);
+      } else {
+        const fileContent = await window.electronAPI.readFile(filePath);
+        file.data = JSON.parse(fileContent).items;
+      }
+    } catch (error) {
+      console.error(`Error processing file ${file.filename}:`, error);
+      throw error;
+    }
+  }
+
+  private async isDataStale(timestampPath: string): Promise<boolean> {
+    try {
+      const staleThreshold = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      const timestamp = parseInt(await window.electronAPI.readFile(timestampPath));
+      return Date.now() - timestamp > staleThreshold;
+    } catch (error) {
+      console.error('Error checking if data is stale:', error);
+      return true; // Assume data is stale if we can't read the timestamp
+    }
   }
 
   private async downloadAndStoreFile(file: DataFile) {
     try {
       const response = await axios.get(file.url);
       file.data = response.data.items;
-      localStorage.setItem(file.filename, JSON.stringify(response.data));
-      localStorage.setItem(`${file.filename}_timestamp`, Date.now().toString());
+      const filePath = joinPaths(this.dataPath, file.filename);
+      const timestampPath = joinPaths(this.dataPath, `${file.filename}_timestamp`);
+      await window.electronAPI.writeFile(filePath, JSON.stringify(response.data));
+      await window.electronAPI.writeFile(timestampPath, Date.now().toString());
     } catch (error) {
       console.error(`Error downloading ${file.filename}:`, error);
       throw error;
     }
   }
 
-  searchItems(searchTerm: string, dataType?: 'equipment' | 'resources' | 'consumables'): IDofusItem[] {
-    let results: IDofusItem[] = [];
-    
-    if (dataType) {
-      const file = this.dataFiles.find(f => f.filename.includes(dataType));
-      if (file) {
-        results = file.data.filter(item => 
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+  private async loadIngredientCosts(): Promise<void> {
+    const costsPath = joinPaths(this.dataPath, 'ingredientCosts.json');
+    try {
+      if (await window.electronAPI.fileExists(costsPath)) {
+        const costsData = await window.electronAPI.readFile(costsPath);
+        this.ingredientCosts = JSON.parse(costsData);
       }
-    } else {
-      // Search across all data files if no specific type is provided
-      for (const file of this.dataFiles) {
-        results = results.concat(file.data.filter(item => 
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
-        ));
-      }
+    } catch (error) {
+      console.error('Error loading ingredient costs:', error);
     }
-    
+  }
+
+  private async saveIngredientCosts(): Promise<void> {
+    const costsPath = joinPaths(this.dataPath, 'ingredientCosts.json');
+    try {
+      await window.electronAPI.writeFile(costsPath, JSON.stringify(this.ingredientCosts));
+    } catch (error) {
+      console.error('Error saving ingredient costs:', error);
+    }
+  }
+
+  searchItems(searchTerm: string): IDofusItem[] {
+    let results: IDofusItem[] = [];
+    for (const file of this.dataFiles) {
+      results = results.concat(file.data.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ));
+    }
     return results;
   }
 
@@ -88,17 +138,6 @@ class DataAccessService {
   setIngredientCost(name: string, cost: number): void {
     this.ingredientCosts[name] = cost;
     this.saveIngredientCosts();
-  }
-
-  private loadIngredientCosts(): void {
-    const storedCosts = localStorage.getItem('ingredientCosts');
-    if (storedCosts) {
-      this.ingredientCosts = JSON.parse(storedCosts);
-    }
-  }
-
-  private saveIngredientCosts(): void {
-    localStorage.setItem('ingredientCosts', JSON.stringify(this.ingredientCosts));
   }
 }
 
