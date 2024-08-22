@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../@/components/ui/table";
 import { Input } from "../../@/components/ui/input";
 import { Button } from "../../@/components/ui/button";
@@ -21,8 +21,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProfit, setTotalProfit] = useState(0);
   const [totalTurnover, setTotalTurnover] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const initDatabase = async () => {
@@ -39,15 +40,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     initDatabase();
   }, []);
 
-  useEffect(() => {
-    if (db.isOpen()) {
-      loadSales();
-      loadTotals();
-    }
-  }, [currentPage, searchTerm, filterSold]);
-
-  const loadSales = async () => {
-    setIsLoading(true);
+  const loadSales = useCallback(async () => {
     setError(null);
     try {
       const filters: Partial<ISale> = {};
@@ -64,10 +57,25 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     } catch (err) {
       console.error('Error loading sales:', err);
       setError('Failed to load sales. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, filterSold]);
+
+  const debouncedLoadSales = useCallback(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = setTimeout(() => {
+      loadSales();
+    }, 300);
+  }, [loadSales]);
+
+  useEffect(() => {
+    if (db.isOpen()) {
+      debouncedLoadSales();
+      loadTotals();
+    }
+  }, [debouncedLoadSales]);
+
   const loadTotals = async () => {
     try {
       const { totalProfit, totalTurnover } = await db.getTotalProfitAndTurnover();
@@ -75,8 +83,10 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       setTotalTurnover(totalTurnover);
     } catch (err) {
       console.error('Error loading totals:', err);
+      setError('Failed to load totals. Please refresh the page.');
     }
   };
+
   const handleChange = (id: number, field: keyof ISale, value: string) => {
     setLocalValues(prev => ({
       ...prev,
@@ -93,26 +103,41 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       } else if (field !== 'itemName' && field !== 'addedDate') {
         updatedValue = Number(value);
       }
-      await db.updateSale(id, { [field]: updatedValue });
-      loadSales();
-      loadTotals();
+      try {
+        await db.updateSale(id, { [field]: updatedValue });
+        loadSales();
+        loadTotals();
+      } catch (err) {
+        console.error('Error updating sale:', err);
+        setError('Failed to update sale. Please try again.');
+      }
     }
   };
 
   const handleDelete = async (id: number) => {
-    await db.deleteSale(id);
-    loadSales();
-    loadTotals();
+    try {
+      await db.deleteSale(id);
+      loadSales();
+      loadTotals();
+    } catch (err) {
+      console.error('Error deleting sale:', err);
+      setError('Failed to delete sale. Please try again.');
+    }
   };
 
   const handleDuplicate = async (sale: ISale) => {
-    const { id, ...saleWithoutId } = sale;
-    await db.addSale({
-      ...saleWithoutId,
-      addedDate: new Date()
-    });
-    loadSales();
-    loadTotals();
+    try {
+      const { id, ...saleWithoutId } = sale;
+      await db.addSale({
+        ...saleWithoutId,
+        addedDate: new Date()
+      });
+      loadSales();
+      loadTotals();
+    } catch (err) {
+      console.error('Error duplicating sale:', err);
+      setError('Failed to duplicate sale. Please try again.');
+    }
   };
 
   const handleAddToCraftimizer = (itemName: string) => {
@@ -125,15 +150,13 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
   };
 
-  const totalPages = Math.ceil(totalSales / ITEMS_PER_PAGE);
-  
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    debouncedLoadSales();
+  };
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const totalPages = Math.ceil(totalSales / ITEMS_PER_PAGE);
+
   return (
     <div className="flex flex-col h-full space-y-4 overflow-hidden bg-background text-foreground">
       <div className="flex-shrink-0">
@@ -141,25 +164,25 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
           <Input
             placeholder="Search items..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="w-64 bg-background text-foreground border-input"
           />
           <Button
-            onClick={() => setFilterSold(null)}
+            onClick={() => { setFilterSold(null); debouncedLoadSales(); }}
             variant={filterSold === null ? "default" : "outline"}
             className="bg-primary text-primary-foreground"
           >
             All
           </Button>
           <Button
-            onClick={() => setFilterSold(true)}
+            onClick={() => { setFilterSold(true); debouncedLoadSales(); }}
             variant={filterSold === true ? "default" : "outline"}
             className="bg-primary text-primary-foreground"
           >
             Sold
           </Button>
           <Button
-            onClick={() => setFilterSold(false)}
+            onClick={() => { setFilterSold(false); debouncedLoadSales(); }}
             variant={filterSold === false ? "default" : "outline"}
             className="bg-primary text-primary-foreground"
           >
@@ -167,6 +190,12 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
           </Button>
         </div>
       </div>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      )}
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">Sales Tracker</h2>
@@ -199,64 +228,64 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
               ) : (
                 sales.map((sale) => (
                   <TableRow key={sale.id}>
-                  <TableCell>{sale.itemName}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={localValues[`${sale.id}-quantity`] ?? sale.quantity}
-                      onChange={(e) => handleChange(sale.id!, 'quantity', e.target.value)}
-                      onBlur={() => handleBlur(sale.id!, 'quantity')}
-                      className="w-20 h-6 px-1 bg-background text-foreground border-input"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={localValues[`${sale.id}-costPrice`] ?? sale.costPrice}
-                      onChange={(e) => handleChange(sale.id!, 'costPrice', e.target.value)}
-                      onBlur={() => handleBlur(sale.id!, 'costPrice')}
-                      className="w-24 h-6 px-1 bg-background text-foreground border-input"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={localValues[`${sale.id}-sellPrice`] ?? sale.sellPrice}
-                      onChange={(e) => handleChange(sale.id!, 'sellPrice', e.target.value)}
-                      onBlur={() => handleBlur(sale.id!, 'sellPrice')}
-                      className="w-24 h-6 px-1 bg-background text-foreground border-input"
-                    />
-                  </TableCell>
-                  <TableCell>{formatDate(sale.addedDate)}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="date"
-                      value={localValues[`${sale.id}-sellDate`] ?? (sale.sellDate ? new Date(sale.sellDate).toISOString().split('T')[0] : '')}
-                      onChange={(e) => handleChange(sale.id!, 'sellDate', e.target.value)}
-                      onBlur={() => handleBlur(sale.id!, 'sellDate')}
-                      className="w-32 h-6 px-1 bg-background text-foreground border-input"
-                    />
-                  </TableCell>
-                  <TableCell>{sale.profit.toFixed(0)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="bg-secondary text-secondary-foreground">Actions</Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-popover text-popover-foreground">
-                        <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
-                          Add to Craftimizer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicate(sale)}>
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(sale.id!)}>
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                    <TableCell>{sale.itemName}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={localValues[`${sale.id}-quantity`] ?? sale.quantity}
+                        onChange={(e) => handleChange(sale.id!, 'quantity', e.target.value)}
+                        onBlur={() => handleBlur(sale.id!, 'quantity')}
+                        className="w-20 h-6 px-1 bg-background text-foreground border-input"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={localValues[`${sale.id}-costPrice`] ?? sale.costPrice}
+                        onChange={(e) => handleChange(sale.id!, 'costPrice', e.target.value)}
+                        onBlur={() => handleBlur(sale.id!, 'costPrice')}
+                        className="w-24 h-6 px-1 bg-background text-foreground border-input"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={localValues[`${sale.id}-sellPrice`] ?? sale.sellPrice}
+                        onChange={(e) => handleChange(sale.id!, 'sellPrice', e.target.value)}
+                        onBlur={() => handleBlur(sale.id!, 'sellPrice')}
+                        className="w-24 h-6 px-1 bg-background text-foreground border-input"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(sale.addedDate)}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="date"
+                        value={localValues[`${sale.id}-sellDate`] ?? (sale.sellDate ? new Date(sale.sellDate).toISOString().split('T')[0] : '')}
+                        onChange={(e) => handleChange(sale.id!, 'sellDate', e.target.value)}
+                        onBlur={() => handleBlur(sale.id!, 'sellDate')}
+                        className="w-32 h-6 px-1 bg-background text-foreground border-input"
+                      />
+                    </TableCell>
+                    <TableCell>{sale.profit.toFixed(0)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="bg-secondary text-secondary-foreground">Actions</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-popover text-popover-foreground">
+                          <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
+                            Add to Craftimizer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicate(sale)}>
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(sale.id!)}>
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
             </TableBody>
@@ -269,7 +298,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
         </div>
         <div className="flex space-x-2">
           <Button
-            onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+            onClick={() => { setCurrentPage(page => Math.max(1, page - 1)); debouncedLoadSales(); }}
             disabled={currentPage === 1}
             variant="outline"
             size="sm"
@@ -277,7 +306,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
             Previous
           </Button>
           <Button
-            onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+            onClick={() => { setCurrentPage(page => Math.min(totalPages, page + 1)); debouncedLoadSales(); }}
             disabled={currentPage === totalPages}
             variant="outline"
             size="sm"
