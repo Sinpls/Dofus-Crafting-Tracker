@@ -32,7 +32,7 @@ class CalculationService {
         }
       }
     } else {
-      totalCost = (this.userSetCosts[itemName] || 0) * amount;
+      totalCost = (this.userSetCosts[itemName] || dataAccessService.getIngredientCost(itemName) || 0) * amount;
     }
 
     const costPerUnit = totalCost / amount;
@@ -131,6 +131,9 @@ class CalculationService {
     }
 
     delete this.calculatedCosts[itemName];
+
+    // Save the updated ingredient cost
+    dataAccessService.setIngredientCost(itemName, cost);
   }
 
   private recalculateIntermediateItemCost(itemName: string): void {
@@ -155,7 +158,7 @@ class CalculationService {
     if (this.intermediateItems[ingredientName]) {
       return this.intermediateItems[ingredientName].cost;
     }
-    return 0;
+    return dataAccessService.getIngredientCost(ingredientName);
   }
 
   private removeUnusedIngredients(intermediateItemName: string): void {

@@ -40,6 +40,7 @@ class DataAccessService {
 
     try {
       await Promise.all(this.dataFiles.map(file => this.checkAndUpdateFile(file)));
+      await this.loadIngredientCosts();
     } catch (error) {
       console.error('Failed to initialize data files:', error);
       throw new Error('Failed to initialize DataAccessService: Unable to load data files');
@@ -115,6 +116,29 @@ class DataAccessService {
 
   setIngredientCost(name: string, cost: number): void {
     this.ingredientCosts[name] = cost;
+    this.saveIngredientCosts();
+  }
+
+  private async loadIngredientCosts(): Promise<void> {
+    const filePath = joinPaths(this.dataPath, 'ingredient_costs.json');
+    try {
+      const fileExists = await window.electronAPI.fileExists(filePath);
+      if (fileExists) {
+        const fileContent = await window.electronAPI.readFile(filePath);
+        this.ingredientCosts = JSON.parse(fileContent);
+      }
+    } catch (error) {
+      console.error('Error loading ingredient costs:', error);
+    }
+  }
+
+  private async saveIngredientCosts(): Promise<void> {
+    const filePath = joinPaths(this.dataPath, 'ingredient_costs.json');
+    try {
+      await window.electronAPI.writeFile(filePath, JSON.stringify(this.ingredientCosts));
+    } catch (error) {
+      console.error('Error saving ingredient costs:', error);
+    }
   }
 }
 
