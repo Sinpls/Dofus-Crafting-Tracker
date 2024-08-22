@@ -5,3 +5,5 @@
 /dist-electron
 /@
 /.vite
+/release
+/user_data

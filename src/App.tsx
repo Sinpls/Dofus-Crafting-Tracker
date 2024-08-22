@@ -37,9 +37,15 @@ const App: React.FC = () => {
     };
     initializeData();
 
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
-    }
+    // Check system preference
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mediaQuery.matches);
+
+    // Add listener for changes
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mediaQuery.addListener(handler);
+
+    return () => mediaQuery.removeListener(handler);
   }, []);
 
   useEffect(() => {

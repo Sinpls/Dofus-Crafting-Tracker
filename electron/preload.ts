@@ -19,5 +19,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateSale: (id: number, updates: any) => ipcRenderer.invoke('update-sale', id, updates),
   deleteSale: (id: number) => ipcRenderer.invoke('delete-sale', id),
 
+  getUserDataPath: () => ipcRenderer.invoke('get-user-data-path'),
+  getDataPath: () => ipcRenderer.invoke('get-data-path'),
+  fileExists: (path: string) => ipcRenderer.invoke('file-exists', path),
+  readFile: (path: string) => ipcRenderer.invoke('read-file', path),
+  writeFile: (path: string, data: string) => ipcRenderer.invoke('write-file', path, data),
+
+
   // Other APIs can be added here as needed
+});
+
+ipcRenderer.on('user-data-path', (_, path) => {
+  localStorage.setItem('userDataPath', path);
 });

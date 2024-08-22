@@ -1,6 +1,6 @@
 {
   "name": "dofus-salescraft",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dofus Salescraft application",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -11,7 +11,8 @@
     "build": "npm run build:react && npm run build:electron",
     "build:react": "vite build",
     "build:electron": "tsc",
-    "package": "electron-builder",
+    "package": "electron-builder --config electron-builder.config.js",
+    "package:portable": "electron-builder --config electron-builder.config.js -p never",
     "download-data": "node scripts/downloadData.js"
   },
   "dependencies": {
@@ -46,14 +47,33 @@
     "vite": "^4.2.0",
     "vite-electron-plugin": "^0.8.3"
   },
-  "build": {
+"build": {
     "appId": "com.yourdomain.dofus-salescraft",
+    "productName": "Dofus Salescraft",
     "files": [
       "dist/**/*",
+      "dist-electron/**/*",
       "package.json"
     ],
     "directories": {
       "output": "release"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "public/Dofus.ico"
+    },
+    "asar": true,
+    "asarUnpack": [
+      "dist-electron/preload.js"
+    ]
   }
 }

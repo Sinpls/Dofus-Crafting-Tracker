@@ -12,6 +12,15 @@ Dofus-Salescraft
 │   └── lib
 │       └── utils.ts
 ├── components.json
+├── dist
+│   ├── assets
+│   │   ├── index-200e8339.css
+│   │   └── main-f2b40d27.js
+│   └── index.html
+├── dist-electron
+│   ├── database.js
+│   ├── main.js
+│   └── preload.js
 ├── Dofus-Salescraft.txt
 ├── electron
 │   ├── database.ts
@@ -33,20 +42,18 @@ Dofus-Salescraft
 ├── src
 │   ├── App.tsx
 │   ├── components
+│   │   ├── Charts.tsx
 │   │   ├── Craftimizer
 │   │   │   ├── CraftedItemList.tsx
 │   │   │   ├── IngredientList.tsx
 │   │   │   ├── IntermediateItemsList.tsx
 │   │   │   └── SearchBar.tsx
 │   │   ├── Craftimizer.tsx
-│   │   ├── SalesTracker.tsx
-│   │   ├── Charts.tsx
-│   │   └── Tabs.tsx
+│   │   └── SalesTracker.tsx
 │   ├── electron.d.ts
 │   ├── globals.css
 │   ├── hooks
-│   │   ├── useCalculation.ts
-│   │   └── useDataAccess.ts
+│   │   └── useCalculation.ts
 │   ├── index.html
 │   ├── index.tsx
 │   ├── services
