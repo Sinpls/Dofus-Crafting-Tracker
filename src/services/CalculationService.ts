@@ -1,5 +1,3 @@
-// CalculationService.ts
-
 import { dataAccessService } from './DataAccessService';
 import { ICraftedItem, IIngredient, IIntermediateItem, IDofusItem } from '../types';
 
@@ -56,9 +54,9 @@ class CalculationService {
         };
       } else {
         const existingItem = this.intermediateItems[itemName];
+        existingItem.amount += amount;
         if (!existingItem.isManuallyOverridden) {
-          existingItem.amount += amount;
-          existingItem.cost = (existingItem.cost * existingItem.amount + cost) / (existingItem.amount + amount);
+          existingItem.cost = (existingItem.cost * (existingItem.amount - amount) + cost) / existingItem.amount;
         }
         existingItem.level = Math.max(existingItem.level, depth);
       }
@@ -74,16 +72,40 @@ class CalculationService {
         };
       } else {
         const existingIngredient = this.ingredients[itemName];
+        existingIngredient.amount += amount;
         if (!existingIngredient.isManuallyOverridden) {
-          existingIngredient.amount += amount;
-          existingIngredient.cost = (existingIngredient.cost * existingIngredient.amount + cost) / (existingIngredient.amount + amount);
+          existingIngredient.cost = (existingIngredient.cost * (existingIngredient.amount - amount) + cost) / existingIngredient.amount;
         }
       }
     }
   }
 
+  async calculateCraftedItemCosts(craftedItemList: ICraftedItem[]): Promise<ICraftedItem[]> {
+    this.clearCalculations();
+    const updatedList: ICraftedItem[] = [];
+
+    for (const item of craftedItemList) {
+      const itemDetails = await dataAccessService.getItemDetails(item.ankama_id);
+      if (itemDetails) {
+        const totalCost = await this.calculateItemCost(itemDetails, item.amount);
+        const costPerUnit = totalCost / item.amount;
+        const totalSell = item.sellPrice * item.amount;
+        const profit = totalSell - totalCost;
+
+        updatedList.push({
+          ...item,
+          costPerUnit: Math.round(costPerUnit),
+          profit: Math.round(profit)
+        });
+      }
+    }
+
+    console.log("Final ingredients:", this.ingredients);
+    console.log("Final intermediate items:", this.intermediateItems);
+    return updatedList;
+  }
+
   setUserCost(itemName: string, cost: number): void {
-    
     if (this.intermediateItems[itemName]) {
       const intermediateItem = this.intermediateItems[itemName];
       
@@ -98,7 +120,6 @@ class CalculationService {
         this.recalculateIntermediateItemCost(itemName);
         this.restoreRecipeIngredients(itemName);
       }
-
     } else if (this.ingredients[itemName]) {
       this.ingredients[itemName].cost = cost;
       this.ingredients[itemName].isManuallyOverridden = cost !== 0;
@@ -123,6 +144,7 @@ class CalculationService {
       this.intermediateItems[itemName].cost = totalCost / this.intermediateItems[itemName].amount;
     }
   }
+
   private getIngredientCost(ingredientName: string): number {
     if (this.userSetCosts[ingredientName] !== undefined) {
       return this.userSetCosts[ingredientName];
@@ -135,6 +157,7 @@ class CalculationService {
     }
     return 0;
   }
+
   private removeUnusedIngredients(intermediateItemName: string): void {
     const recipe = this.itemRecipes[intermediateItemName];
     if (recipe) {
@@ -170,35 +193,9 @@ class CalculationService {
     }
   }
 
-  async calculateCraftedItemCosts(craftedItemList: ICraftedItem[]): Promise<ICraftedItem[]> {
-    this.clearCalculations();
-    const updatedList: ICraftedItem[] = [];
-
-    for (const item of craftedItemList) {
-      const itemDetails = await dataAccessService.getItemDetails(item.ankama_id);
-      if (itemDetails) {
-        const totalCost = await this.calculateItemCost(itemDetails, item.amount);
-        const costPerUnit = totalCost / item.amount;
-        const totalSell = item.sellPrice * item.amount;
-        const profit = totalSell - totalCost;
-
-        updatedList.push({
-          ...item,
-          costPerUnit: Math.round(costPerUnit),
-          profit: Math.round(profit)
-        });
-        console.log(`Updated ${itemDetails.name}: costPerUnit=${costPerUnit}, profit=${profit}`);
-      }
-    }
-
-    console.log("Final ingredients:", this.ingredients);
-    console.log("Final intermediate items:", this.intermediateItems);
-    return updatedList;
-  }
-
   getIntermediateItems(): IIntermediateItem[] {
     const items = Object.values(this.intermediateItems);
-    return items.sort((a, b) => a.level - b.level);  // Sort by level in descending order
+    return items.sort((a, b) => a.level - b.level);  // Sort by level in ascending order
   }
 
   getIngredients(): IIngredient[] {

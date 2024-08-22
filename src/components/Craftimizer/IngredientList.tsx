@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../@/components/ui/table"
 import { Input } from "../../../@/components/ui/input"
 import { IIngredient } from '../../types';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface IngredientListProps {
   ingredients: IIngredient[];
@@ -36,6 +37,10 @@ const IngredientList: React.FC<IngredientListProps> = ({
     return <div>No ingredients available</div>;
   }
 
+  const handleItemClick = (itemName: string) => {
+    copyToClipboard(itemName);
+  };
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <div className="flex-shrink-1 p-2">
@@ -59,7 +64,12 @@ const IngredientList: React.FC<IngredientListProps> = ({
                   ingredient.type === 'Intermediate' ? 'bg-yellow-500/20' : ''
                 }`}
               >
-                <TableCell>{ingredient.name}</TableCell>
+                <TableCell 
+                  onClick={() => handleItemClick(ingredient.name)}
+                  className="cursor-pointer hover:underline"
+                >
+                  {ingredient.name}
+                </TableCell>
                 <TableCell>{ingredient.amount.toLocaleString()}</TableCell>
                 <TableCell>
                   <Input

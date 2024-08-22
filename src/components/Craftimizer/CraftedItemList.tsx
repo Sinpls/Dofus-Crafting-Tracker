@@ -4,6 +4,7 @@ import { Input } from "../../../@/components/ui/input"
 import { Button } from "../../../@/components/ui/button"
 import { ICraftedItem } from '../../types';
 import { db } from '../../services/DatabaseService';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface CraftedItemListProps {
   craftedItemList: ICraftedItem[];
@@ -54,6 +55,9 @@ const CraftedItemList: React.FC<CraftedItemListProps> = ({
     }
   };
 
+  const handleItemClick = (itemName: string) => {
+    copyToClipboard(itemName);
+  };
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
@@ -88,7 +92,12 @@ const CraftedItemList: React.FC<CraftedItemListProps> = ({
                   item.profit > 0 ? 'bg-green-900/20' : item.profit < 0 ? 'bg-red-900/20' : ''
                 }`}
               >
-                <TableCell>{item.name}</TableCell>
+                <TableCell 
+                  onClick={() => handleItemClick(item.name)}
+                  className="cursor-pointer hover:underline"
+                >
+                  {item.name}
+                </TableCell>
                 <TableCell>
                   <Input
                     type="text"
