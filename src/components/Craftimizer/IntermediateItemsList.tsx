@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../@/components/ui/table"
 import { Input } from "../../../@/components/ui/input"
 import { IIntermediateItem } from '../../types';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface IntermediateItemsListProps {
   intermediateItems: IIntermediateItem[];
@@ -36,6 +37,10 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
     return <div>No intermediate items available</div>;
   }
 
+  const handleItemClick = (itemName: string) => {
+    copyToClipboard(itemName);
+  };
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <div className="flex-shrink-1 p-2">
@@ -59,7 +64,12 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
                   item.isManuallyOverridden ? 'bg-yellow-500/20' : ''
                 }`}
               >
-                <TableCell>{item.name}</TableCell>
+                <TableCell 
+                  onClick={() => handleItemClick(item.name)}
+                  className="cursor-pointer hover:underline"
+                >
+                  {item.name}
+                </TableCell>
                 <TableCell>{item.amount}</TableCell>
                 <TableCell>
                   <Input
