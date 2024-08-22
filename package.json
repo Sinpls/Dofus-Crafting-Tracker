@@ -1,7 +1,7 @@
 {
-  "name": "dofus-salescraft",
-  "version": "1.0.1",
-  "description": "Dofus Salescraft application",
+  "name": "dofus-crafting-tracker",
+  "version": "2.0.0",
+  "description": "Dofus Crafting Tracker application",
   "main": "dist-electron/main.js",
   "scripts": {
     "start": "electron .",
@@ -48,8 +48,8 @@
     "vite-electron-plugin": "^0.8.3"
   },
 "build": {
-    "appId": "com.yourdomain.dofus-salescraft",
-    "productName": "Dofus Salescraft",
+    "appId": "com.sinpls.dofus-crafting-tracker",
+    "productName": "Dofus Crafting Tracker",
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
