@@ -13,21 +13,24 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
 
     super(dbPath);
 
-    this.version(2).stores({
+    this.version(3).stores({
       craftedItem: '++id, ankama_id, name, amount, sellPrice',
       ingredients: '++id, name, amount, cost, type',
-      sales: '++id, itemName, quantity, costPrice, sellPrice, addedDate, sellDate, profit'
+      sales: '++id, itemName, quantity, quantitySold, costPrice, sellPrice, addedDate, sellDate, profit'
     }).upgrade(tx => {
       return tx.table('sales').toCollection().modify(sale => {
-        if (!sale.addedDate) {
-          sale.addedDate = new Date();
+        if (sale.quantitySold === undefined) {
+          sale.quantitySold = sale.sellDate ? sale.quantity : 0;
         }
       });
     });
   }
 
   async addSale(sale: Omit<ISale, 'id'>): Promise<number> {
-    return await this.sales.add(sale);
+    return await this.sales.add({
+      ...sale,
+      quantitySold: sale.quantitySold || 0
+    });
   }
 
   async getSales(page: number = 1, itemsPerPage: number = 10, filters: Partial<ISale> = {}): Promise<{ sales: ISale[], total: number }> {
@@ -52,6 +55,8 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
         .limit(itemsPerPage)
         .toArray();
 
+      console.log('Fetched sales:', sales);
+
       return { sales, total };
     } catch (error) {
       console.error('Error in getSales:', error);
@@ -64,7 +69,16 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
     if (sale) {
       const updatedSale = { ...sale, ...updates };
       updatedSale.profit = this.calculateProfit(updatedSale);
-      return await this.sales.update(id, updatedSale);
+      
+      const result = await this.sales.update(id, updatedSale);
+      
+      if (result === 0) {
+        console.error(`Failed to update sale with id ${id}`);
+      } else {
+        console.log(`Successfully updated sale with id ${id}`, updatedSale);
+      }
+      
+      return result;
     }
     return 0;
   }
@@ -74,14 +88,48 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
   }
 
   private calculateProfit(sale: ISale): number {
-    return (sale.sellPrice - sale.costPrice) * sale.quantity;
+    return (sale.sellPrice - sale.costPrice) * sale.quantitySold;
   }
 
   async getTotalProfitAndTurnover(): Promise<{ totalProfit: number, totalTurnover: number }> {
     const sales = await this.sales.toArray();
     const totalProfit = sales.reduce((sum, sale) => sum + (sale.sellDate ? sale.profit : 0), 0);
-    const totalTurnover = sales.reduce((sum, sale) => sum + (sale.sellDate ? sale.sellPrice * sale.quantity : 0), 0);
+    const totalTurnover = sales.reduce((sum, sale) => sum + (sale.sellDate ? sale.sellPrice * sale.quantitySold : 0), 0);
     return { totalProfit, totalTurnover };
+  }
+
+  async moveUnsold(id: number): Promise<void> {
+    const sale = await this.sales.get(id);
+    console.log('Original sale:', sale);
+    if (sale && sale.quantity > sale.quantitySold) {
+      const unsoldQuantity = sale.quantity - sale.quantitySold;
+      
+      // Create new row for unsold items
+      const { id: _, ...saleWithoutId } = sale;
+      await this.addSale({
+        ...saleWithoutId,
+        quantity: unsoldQuantity,
+        quantitySold: 0,
+        sellDate: null,
+        profit: 0,
+        addedDate: new Date()
+      });
+
+      // Update original row
+      const updatedSale: Partial<ISale> = {
+        quantity: sale.quantitySold,
+        profit: this.calculateProfit({...sale, quantity: sale.quantitySold})
+      };
+      
+      console.log('Updated sale:', updatedSale);
+      const updateResult = await this.updateSale(id, updatedSale);
+      console.log('Update result:', updateResult);
+      
+      if (updateResult === 0) {
+        console.error(`Failed to update sale with id ${id}`);
+        throw new Error(`Failed to update sale with id ${id}`);
+      }
+    }
   }
 }
 

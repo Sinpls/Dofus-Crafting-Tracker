@@ -24,23 +24,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [totalTurnover, setTotalTurnover] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[0]);
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    const initDatabase = async () => {
-      try {
-        await setupDatabase();
-        await loadSales();
-        await loadTotals();
-      } catch (error) {
-        console.error('Failed to initialize database:', error);
-        setError('Failed to initialize database. Please refresh the page and try again.');
-      }
-    };
-
-    initDatabase();
-  }, []);
 
   const loadSales = useCallback(async () => {
     setError(null);
@@ -62,6 +48,21 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     }
   }, [currentPage, searchTerm, filterSold, itemsPerPage]);
 
+  useEffect(() => {
+    loadSales();
+  }, [loadSales, updateTrigger]);
+
+  const loadTotals = useCallback(async () => {
+    try {
+      const { totalProfit, totalTurnover } = await db.getTotalProfitAndTurnover();
+      setTotalProfit(totalProfit);
+      setTotalTurnover(totalTurnover);
+    } catch (err) {
+      console.error('Error loading totals:', err);
+      setError('Failed to load totals. Please refresh the page.');
+    }
+  }, []);
+
   const debouncedLoadSales = useCallback(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -72,22 +73,26 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   }, [loadSales]);
 
   useEffect(() => {
+    const initDatabase = async () => {
+      try {
+        await setupDatabase();
+        await loadSales();
+        await loadTotals();
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        setError('Failed to initialize database. Please refresh the page and try again.');
+      }
+    };
+
+    initDatabase();
+  }, [loadSales, loadTotals]);
+
+  useEffect(() => {
     if (db.isOpen()) {
       debouncedLoadSales();
       loadTotals();
     }
-  }, [debouncedLoadSales, itemsPerPage]);
-
-  const loadTotals = async () => {
-    try {
-      const { totalProfit, totalTurnover } = await db.getTotalProfitAndTurnover();
-      setTotalProfit(totalProfit);
-      setTotalTurnover(totalTurnover);
-    } catch (err) {
-      console.error('Error loading totals:', err);
-      setError('Failed to load totals. Please refresh the page.');
-    }
-  };
+  }, [debouncedLoadSales, loadTotals, updateTrigger]);
 
   const handleChange = (id: number, field: keyof ISale, value: string) => {
     setLocalValues(prev => ({
@@ -107,8 +112,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       }
       try {
         await db.updateSale(id, { [field]: updatedValue });
-        loadSales();
-        loadTotals();
+        setUpdateTrigger(prev => prev + 1);
       } catch (err) {
         console.error('Error updating sale:', err);
         setError('Failed to update sale. Please try again.');
@@ -119,26 +123,20 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const handleDelete = async (id: number) => {
     try {
       await db.deleteSale(id);
-      loadSales();
-      loadTotals();
+      setUpdateTrigger(prev => prev + 1);
     } catch (err) {
       console.error('Error deleting sale:', err);
       setError('Failed to delete sale. Please try again.');
     }
   };
 
-  const handleDuplicate = async (sale: ISale) => {
+  const handleMoveUnsold = async (id: number) => {
     try {
-      const { id, ...saleWithoutId } = sale;
-      await db.addSale({
-        ...saleWithoutId,
-        addedDate: new Date()
-      });
-      loadSales();
-      loadTotals();
+      await db.moveUnsold(id);
+      setUpdateTrigger(prev => prev + 1);
     } catch (err) {
-      console.error('Error duplicating sale:', err);
-      setError('Failed to duplicate sale. Please try again.');
+      console.error('Error moving unsold items:', err);
+      setError('Failed to move unsold items. Please try again.');
     }
   };
 
@@ -159,6 +157,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   };
 
   const totalPages = Math.ceil(totalSales / itemsPerPage);
+
 
   return (
     <div className="flex flex-col h-full space-y-4 overflow-hidden bg-background text-foreground">
@@ -214,6 +213,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px]">Item Name</TableHead>
+                <TableHead>Quantity Sold</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Cost Price</TableHead>
                 <TableHead>Sell Price</TableHead>
@@ -226,12 +226,22 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
             <TableBody>
               {sales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center">No sales found</TableCell>
+                  <TableCell colSpan={9} className="text-center">No sales found</TableCell>
                 </TableRow>
               ) : (
                 sales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell>{sale.itemName}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={localValues[`${sale.id}-quantitySold`] ?? formatNumber(sale.quantitySold)}
+                        onChange={(e) => handleChange(sale.id!, 'quantitySold', e.target.value)}
+                        onBlur={() => handleBlur(sale.id!, 'quantitySold')}
+                        className="w-20 h-6 px-1 bg-background text-foreground border-input"
+                      />
+                    </TableCell>
                     <TableCell>
                       <Input
                         type="text"
@@ -282,8 +292,8 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                           <DropdownMenuItem onClick={() => handleAddToCraftimizer(sale.itemName)}>
                             Add to Craftimizer
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicate(sale)}>
-                            Duplicate
+                          <DropdownMenuItem onClick={() => handleMoveUnsold(sale.id!)}>
+                            Move Unsold
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDelete(sale.id!)}>
                             Delete

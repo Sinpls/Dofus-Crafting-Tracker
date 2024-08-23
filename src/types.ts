@@ -24,6 +24,7 @@ export interface ISale {
   id?: number;
   itemName: string;
   quantity: number;
+  quantitySold: number;
   costPrice: number;
   sellPrice: number;
   addedDate: Date;

@@ -38,15 +38,17 @@ const CraftedItemList: React.FC<CraftedItemListProps> = ({
 
   const handleExportAllToSalesTracker = async () => {
     try {
+      const currentDate = new Date();
       for (const item of craftedItemList) {
         await db.addSale({
           itemName: item.name,
           quantity: item.amount,
+          quantitySold: 0,
           costPrice: item.costPerUnit,
           sellPrice: item.sellPrice,
-          addedDate: new Date(),
-          sellDate: null,
-          profit: (item.sellPrice - item.costPerUnit) * item.amount
+          addedDate: currentDate,
+          sellDate: currentDate,
+          profit: 0
         });
       }
       console.log(`Exported all items to Sales Tracker`);
