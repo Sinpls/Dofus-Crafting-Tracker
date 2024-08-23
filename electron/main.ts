@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import windowStateKeeper from 'electron-window-state';
 
 let win: BrowserWindow | null = null;
 const isDevelopment = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -41,15 +42,28 @@ function setupPaths() {
 function createWindow() {
   const { dataPath } = setupPaths();
 
+  // Load the previous state with fallback to defaults
+  const windowState = windowStateKeeper({
+    defaultWidth: 800,
+    defaultHeight: 600
+  });
+
   win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    x: windowState.x,
+    y: windowState.y,
+    width: windowState.width,
+    height: windowState.height,
     webPreferences: {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, '..', 'public', 'Dofus.ico')
   });
+
+  // Let us register listeners on the window, so we can update the state
+  // automatically (the listeners will be removed when the window is closed)
+  // and restore the maximized or full screen state
+  windowState.manage(win);
 
   if (isDevelopment) {
     win.loadURL('http://localhost:5173');

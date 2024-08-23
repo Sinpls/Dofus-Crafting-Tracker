@@ -11,7 +11,7 @@ interface SalesTrackerProps {
   addCraftedItem: (item: IDofusItem | { name: string; ankama_id?: number }) => Promise<void>;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [sales, setSales] = useState<ISale[]>([]);
@@ -23,6 +23,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [totalProfit, setTotalProfit] = useState(0);
   const [totalTurnover, setTotalTurnover] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[0]);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -49,7 +50,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       if (filterSold !== null) filters.sellDate = filterSold ? new Date() : null;
 
       console.log('Fetching sales with filters:', filters);
-      const { sales: loadedSales, total } = await db.getSales(currentPage, ITEMS_PER_PAGE, filters);
+      const { sales: loadedSales, total } = await db.getSales(currentPage, itemsPerPage, filters);
       console.log('Loaded sales:', loadedSales);
       console.log('Total sales:', total);
 
@@ -59,7 +60,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       console.error('Error loading sales:', err);
       setError('Failed to load sales. Please try again.');
     }
-  }, [currentPage, searchTerm, filterSold]);
+  }, [currentPage, searchTerm, filterSold, itemsPerPage]);
 
   const debouncedLoadSales = useCallback(() => {
     if (debounceTimer.current) {
@@ -75,7 +76,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       debouncedLoadSales();
       loadTotals();
     }
-  }, [debouncedLoadSales]);
+  }, [debouncedLoadSales, itemsPerPage]);
 
   const loadTotals = async () => {
     try {
@@ -153,10 +154,11 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1);
     debouncedLoadSales();
   };
 
-  const totalPages = Math.ceil(totalSales / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalSales / itemsPerPage);
 
   return (
     <div className="flex flex-col h-full space-y-4 overflow-hidden bg-background text-foreground">
@@ -169,21 +171,21 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
             className="w-64 bg-background text-foreground border-input"
           />
           <Button
-            onClick={() => { setFilterSold(null); debouncedLoadSales(); }}
+            onClick={() => { setFilterSold(null); setCurrentPage(1); debouncedLoadSales(); }}
             variant={filterSold === null ? "default" : "outline"}
             className="bg-primary text-primary-foreground"
           >
             All
           </Button>
           <Button
-            onClick={() => { setFilterSold(true); debouncedLoadSales(); }}
+            onClick={() => { setFilterSold(true); setCurrentPage(1); debouncedLoadSales(); }}
             variant={filterSold === true ? "default" : "outline"}
             className="bg-primary text-primary-foreground"
           >
             Sold
           </Button>
           <Button
-            onClick={() => { setFilterSold(false); debouncedLoadSales(); }}
+            onClick={() => { setFilterSold(false); setCurrentPage(1); debouncedLoadSales(); }}
             variant={filterSold === false ? "default" : "outline"}
             className="bg-primary text-primary-foreground"
           >
@@ -298,25 +300,52 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       </div>
       <div className="flex justify-between items-center mt-4">
         <div>
-          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, totalSales)} of {totalSales} entries
+          Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalSales)} of {totalSales} entries
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 items-center">
           <Button
             onClick={() => { setCurrentPage(page => Math.max(1, page - 1)); debouncedLoadSales(); }}
             disabled={currentPage === 1}
-            variant="outline"
+            variant="default"
             size="sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Previous
           </Button>
           <Button
             onClick={() => { setCurrentPage(page => Math.min(totalPages, page + 1)); debouncedLoadSales(); }}
             disabled={currentPage === totalPages}
-            variant="outline"
+            variant="default"
             size="sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Next
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="default" 
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {itemsPerPage} per page
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {ITEMS_PER_PAGE_OPTIONS.map(option => (
+                <DropdownMenuItem 
+                  key={option}
+                  onClick={() => {
+                    setItemsPerPage(option);
+                    setCurrentPage(1);
+                    debouncedLoadSales();
+                  }}
+                >
+                  {option} per page
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
