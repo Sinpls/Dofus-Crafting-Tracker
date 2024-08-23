@@ -28,7 +28,6 @@ export interface ISale {
   costPrice: number;
   sellPrice: number;
   addedDate: Date;
-  sellDate: Date | null;
   profit: number;
 }
 

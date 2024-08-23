@@ -13,15 +13,13 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
 
     super(dbPath);
 
-    this.version(3).stores({
+    this.version(4).stores({
       craftedItem: '++id, ankama_id, name, amount, sellPrice',
       ingredients: '++id, name, amount, cost, type',
-      sales: '++id, itemName, quantity, quantitySold, costPrice, sellPrice, addedDate, sellDate, profit'
+      sales: '++id, itemName, quantity, quantitySold, costPrice, sellPrice, addedDate, profit'
     }).upgrade(tx => {
       return tx.table('sales').toCollection().modify(sale => {
-        if (sale.quantitySold === undefined) {
-          sale.quantitySold = sale.sellDate ? sale.quantity : 0;
-        }
+        delete sale.sellDate;
       });
     });
   }
@@ -41,10 +39,10 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
       if (filters.itemName) {
         query = query.filter(sale => sale.itemName.toLowerCase().includes(filters.itemName!.toLowerCase()));
       }
-      if (filters.sellDate !== undefined) {
-        query = filters.sellDate === null
-          ? query.filter(sale => sale.sellDate === null)
-          : query.filter(sale => sale.sellDate !== null);
+      if (filters.quantitySold !== undefined) {
+        query = filters.quantitySold === 0
+          ? query.filter(sale => sale.quantitySold === 0)
+          : query.filter(sale => sale.quantitySold > 0);
       }
 
       const total = await query.count();
@@ -93,8 +91,8 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
 
   async getTotalProfitAndTurnover(): Promise<{ totalProfit: number, totalTurnover: number }> {
     const sales = await this.sales.toArray();
-    const totalProfit = sales.reduce((sum, sale) => sum + (sale.sellDate ? sale.profit : 0), 0);
-    const totalTurnover = sales.reduce((sum, sale) => sum + (sale.sellDate ? sale.sellPrice * sale.quantitySold : 0), 0);
+    const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
+    const totalTurnover = sales.reduce((sum, sale) => sum + (sale.sellPrice * sale.quantitySold), 0);
     return { totalProfit, totalTurnover };
   }
 
@@ -110,7 +108,6 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
         ...saleWithoutId,
         quantity: unsoldQuantity,
         quantitySold: 0,
-        sellDate: null,
         profit: 0,
         addedDate: new Date()
       });

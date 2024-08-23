@@ -47,7 +47,6 @@ const CraftedItemList: React.FC<CraftedItemListProps> = ({
           costPrice: item.costPerUnit,
           sellPrice: item.sellPrice,
           addedDate: currentDate,
-          sellDate: currentDate,
           profit: 0
         });
       }

@@ -33,7 +33,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     try {
       const filters: Partial<ISale> = {};
       if (searchTerm) filters.itemName = searchTerm;
-      if (filterSold !== null) filters.sellDate = filterSold ? new Date() : null;
+      if (filterSold !== null) filters.quantitySold = filterSold ? 1 : 0;
 
       console.log('Fetching sales with filters:', filters);
       const { sales: loadedSales, total } = await db.getSales(currentPage, itemsPerPage, filters);
@@ -105,9 +105,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     const value = localValues[`${id}-${field}`];
     if (value !== undefined) {
       let updatedValue: number | Date | null = null;
-      if (field === 'sellDate') {
-        updatedValue = value ? new Date(value) : null;
-      } else if (field !== 'itemName' && field !== 'addedDate') {
+      if (field === 'addedDate') {
+        updatedValue = new Date(value);
+      } else if (field !== 'itemName') {
         updatedValue = Number(value);
       }
       try {
@@ -218,7 +218,6 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                 <TableHead>Cost Price</TableHead>
                 <TableHead>Sell Price</TableHead>
                 <TableHead>Added Date</TableHead>
-                <TableHead>Sell Date</TableHead>
                 <TableHead>Profit</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -226,7 +225,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
             <TableBody>
               {sales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center">No sales found</TableCell>
+                  <TableCell colSpan={8} className="text-center">No sales found</TableCell>
                 </TableRow>
               ) : (
                 sales.map((sale) => (
@@ -273,15 +272,6 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                       />
                     </TableCell>
                     <TableCell>{formatDate(sale.addedDate)}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="date"
-                        value={localValues[`${sale.id}-sellDate`] ?? (sale.sellDate ? new Date(sale.sellDate).toISOString().split('T')[0] : '')}
-                        onChange={(e) => handleChange(sale.id!, 'sellDate', e.target.value)}
-                        onBlur={() => handleBlur(sale.id!, 'sellDate')}
-                        className="w-32 h-6 px-1 bg-background text-foreground border-input"
-                      />
-                    </TableCell>
                     <TableCell>{formatNumber(sale.profit)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
