@@ -1,10 +1,9 @@
-// IngredientList.tsx
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../@/components/ui/table"
 import { Input } from "../../../@/components/ui/input"
 import { IIngredient } from '../../types';
 import { copyToClipboard } from '../../utils/clipboard';
+import { formatNumber } from '../../utils/formatters';
 
 interface IngredientListProps {
   ingredients: IIngredient[];
@@ -29,7 +28,8 @@ const IngredientList: React.FC<IngredientListProps> = ({
     const value = localCosts[name];
     if (value !== undefined) {
       const numericValue = value.replace(/^0+/, '');
-      updateIngredientCost(name, numericValue === '' ? 0 : Number(numericValue));
+      const newCost = numericValue === '' ? 0 : Number(numericValue);
+      updateIngredientCost(name, newCost);
     }
   };
 
@@ -61,7 +61,8 @@ const IngredientList: React.FC<IngredientListProps> = ({
               <TableRow 
                 key={ingredient.name} 
                 className={`hover:bg-muted/50 ${
-                  ingredient.type === 'Intermediate' ? 'bg-yellow-500/20' : ''
+                  ingredient.type === 'Intermediate' ? 'bg-yellow-500/20' : 
+                  !ingredient.isModifiedThisSession ? 'bg-yellow-500/10' : ''
                 }`}
               >
                 <TableCell 
@@ -70,15 +71,17 @@ const IngredientList: React.FC<IngredientListProps> = ({
                 >
                   {ingredient.name}
                 </TableCell>
-                <TableCell>{ingredient.amount.toLocaleString()}</TableCell>
+                <TableCell>{formatNumber(ingredient.amount)}</TableCell>
                 <TableCell>
                   <Input
                     type="text"
                     inputMode="numeric"
-                    value={localCosts[ingredient.name] ?? ingredient.cost}
+                    value={localCosts[ingredient.name] ?? formatNumber(ingredient.cost)}
                     onChange={(e) => handleChange(ingredient.name, e.target.value)}
                     onBlur={() => handleBlur(ingredient.name)}
-                    className="w-24 bg-background text-foreground border-input"
+                    className={`w-24 bg-background text-foreground border-input ${
+                      !ingredient.isModifiedThisSession ? 'bg-yellow-500/10' : ''
+                    }`}
                   />
                 </TableCell>
                 <TableCell>{ingredient.type}</TableCell>

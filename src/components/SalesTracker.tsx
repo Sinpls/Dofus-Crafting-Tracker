@@ -5,6 +5,7 @@ import { Button } from "../../@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../@/components/ui/dropdown-menu";
 import { ISale, IDofusItem } from '../types';
 import { db, setupDatabase } from '../services/DatabaseService';
+import { formatNumber } from '../utils/formatters';
 
 interface SalesTrackerProps {
   addCraftedItem: (item: IDofusItem | { name: string; ankama_id?: number }) => Promise<void>;
@@ -200,8 +201,8 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">Sales Tracker</h2>
           <div>
-            <span className="mr-4">Total Profit: {totalProfit.toFixed(0)}</span>
-            <span>Total Turnover: {totalTurnover.toFixed(0)}</span>
+            <span className="mr-4">Total Profit: {formatNumber(totalProfit)}</span>
+            <span>Total Turnover: {formatNumber(totalTurnover)}</span>
           </div>
         </div>
       </div>
@@ -231,8 +232,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                     <TableCell>{sale.itemName}</TableCell>
                     <TableCell>
                       <Input
-                        type="number"
-                        value={localValues[`${sale.id}-quantity`] ?? sale.quantity}
+                        type="text"
+                        inputMode="numeric"
+                        value={localValues[`${sale.id}-quantity`] ?? formatNumber(sale.quantity)}
                         onChange={(e) => handleChange(sale.id!, 'quantity', e.target.value)}
                         onBlur={() => handleBlur(sale.id!, 'quantity')}
                         className="w-20 h-6 px-1 bg-background text-foreground border-input"
@@ -240,8 +242,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
-                        value={localValues[`${sale.id}-costPrice`] ?? sale.costPrice}
+                        type="text"
+                        inputMode="numeric"
+                        value={localValues[`${sale.id}-costPrice`] ?? formatNumber(sale.costPrice)}
                         onChange={(e) => handleChange(sale.id!, 'costPrice', e.target.value)}
                         onBlur={() => handleBlur(sale.id!, 'costPrice')}
                         className="w-24 h-6 px-1 bg-background text-foreground border-input"
@@ -249,8 +252,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
-                        value={localValues[`${sale.id}-sellPrice`] ?? sale.sellPrice}
+                        type="text"
+                        inputMode="numeric"
+                        value={localValues[`${sale.id}-sellPrice`] ?? formatNumber(sale.sellPrice)}
                         onChange={(e) => handleChange(sale.id!, 'sellPrice', e.target.value)}
                         onBlur={() => handleBlur(sale.id!, 'sellPrice')}
                         className="w-24 h-6 px-1 bg-background text-foreground border-input"
@@ -266,7 +270,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                         className="w-32 h-6 px-1 bg-background text-foreground border-input"
                       />
                     </TableCell>
-                    <TableCell>{sale.profit.toFixed(0)}</TableCell>
+                    <TableCell>{formatNumber(sale.profit)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

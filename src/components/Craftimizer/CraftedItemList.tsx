@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../@/components/ui/table"
 import { Input } from "../../../@/components/ui/input"
 import { Button } from "../../../@/components/ui/button"
@@ -58,6 +58,14 @@ const CraftedItemList: React.FC<CraftedItemListProps> = ({
   const handleItemClick = (itemName: string) => {
     copyToClipboard(itemName);
   };
+
+  const totals = useMemo(() => {
+    return craftedItemList.reduce((acc, item) => {
+      acc.totalCost += item.costPerUnit * item.amount;
+      acc.totalProfit += item.profit;
+      return acc;
+    }, { totalCost: 0, totalProfit: 0 });
+  }, [craftedItemList]);
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
@@ -130,6 +138,14 @@ const CraftedItemList: React.FC<CraftedItemListProps> = ({
                 </TableCell>
               </TableRow>
             ))}
+            <TableRow className="font-bold">
+              <TableCell>Totals</TableCell>
+              <TableCell></TableCell>
+              <TableCell>{totals.totalCost.toLocaleString()}</TableCell>
+              <TableCell></TableCell>
+              <TableCell>{totals.totalProfit.toLocaleString()}</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </div>

@@ -8,6 +8,21 @@ class CalculationService {
   private ingredients: { [key: string]: IIngredient } = {};
   private itemRecipes: { [key: string]: IDofusItem['recipe'] } = {};
 
+  constructor() {
+    this.loadSavedIngredientCosts();
+  }
+
+  private async loadSavedIngredientCosts() {
+    const savedCosts = await dataAccessService.loadIngredientCosts();
+    for (const [name, ingredient] of Object.entries(savedCosts)) {
+      this.userSetCosts[name] = ingredient.cost;
+      this.ingredients[name] = {
+        ...ingredient,
+        isModifiedThisSession: false
+      };
+    }
+  }
+
   async calculateItemCost(item: IDofusItem, amount: number, depth: number = 0): Promise<number> {
     const itemName = item.name;
 
@@ -28,11 +43,12 @@ class CalculationService {
           const ingredientCost = await this.calculateItemCost(ingredientDetails, ingredient.quantity * amount, depth + 1);
           totalCost += ingredientCost;
 
-          this.updateIngredientOrIntermediate(ingredientDetails, ingredient.quantity * amount, ingredientCost, depth + 1);
+          await this.updateIngredientOrIntermediate(ingredientDetails, ingredient.quantity * amount, ingredientCost, depth + 1);
         }
       }
     } else {
-      totalCost = (this.userSetCosts[itemName] || dataAccessService.getIngredientCost(itemName) || 0) * amount;
+      const ingredientCost = this.userSetCosts[itemName] || await dataAccessService.getIngredientCost(itemName) || 0;
+      totalCost = ingredientCost * amount;
     }
 
     const costPerUnit = totalCost / amount;
@@ -40,7 +56,7 @@ class CalculationService {
     return totalCost;
   }
 
-  private updateIngredientOrIntermediate(item: IDofusItem, amount: number, cost: number, depth: number) {
+  private async updateIngredientOrIntermediate(item: IDofusItem, amount: number, cost: number, depth: number) {
     const itemName = item.name;
     if (item.recipe && item.recipe.length > 0) {
       // It's an intermediate item
@@ -54,9 +70,9 @@ class CalculationService {
         };
       } else {
         const existingItem = this.intermediateItems[itemName];
-        existingItem.amount += amount;
+        existingItem.amount += amount; // Accumulate amount
         if (!existingItem.isManuallyOverridden) {
-          existingItem.cost = (existingItem.cost * (existingItem.amount - amount) + cost) / existingItem.amount;
+          existingItem.cost = (existingItem.cost * (existingItem.amount - amount) + cost) / existingItem.amount; // Weighted average cost
         }
         existingItem.level = Math.max(existingItem.level, depth);
       }
@@ -68,18 +84,18 @@ class CalculationService {
           amount: amount,
           cost: this.userSetCosts[itemName] !== undefined ? this.userSetCosts[itemName] : cost / amount,
           type: item.type.name,
-          isManuallyOverridden: this.userSetCosts[itemName] !== undefined
+          isManuallyOverridden: this.userSetCosts[itemName] !== undefined,
+          isModifiedThisSession: false
         };
       } else {
         const existingIngredient = this.ingredients[itemName];
-        existingIngredient.amount += amount;
+        existingIngredient.amount += amount; // Accumulate amount
         if (!existingIngredient.isManuallyOverridden) {
-          existingIngredient.cost = (existingIngredient.cost * (existingIngredient.amount - amount) + cost) / existingIngredient.amount;
+          existingIngredient.cost = (existingIngredient.cost * (existingIngredient.amount - amount) + cost) / existingIngredient.amount; // Weighted average cost
         }
       }
     }
   }
-
   async calculateCraftedItemCosts(craftedItemList: ICraftedItem[]): Promise<ICraftedItem[]> {
     this.clearCalculations();
     const updatedList: ICraftedItem[] = [];
@@ -105,7 +121,7 @@ class CalculationService {
     return updatedList;
   }
 
-  setUserCost(itemName: string, cost: number): void {
+  async setUserCost(itemName: string, cost: number): Promise<void> {
     if (this.intermediateItems[itemName]) {
       const intermediateItem = this.intermediateItems[itemName];
       
@@ -113,42 +129,54 @@ class CalculationService {
         this.userSetCosts[itemName] = cost;
         intermediateItem.cost = cost;
         intermediateItem.isManuallyOverridden = true;
-        this.removeUnusedIngredients(itemName);
+        await this.removeUnusedIngredients(itemName);
       } else {
         delete this.userSetCosts[itemName];
         intermediateItem.isManuallyOverridden = false;
-        this.recalculateIntermediateItemCost(itemName);
-        this.restoreRecipeIngredients(itemName);
+        await this.recalculateIntermediateItemCost(itemName);
+        await this.restoreRecipeIngredients(itemName);
       }
     } else if (this.ingredients[itemName]) {
       this.ingredients[itemName].cost = cost;
       this.ingredients[itemName].isManuallyOverridden = cost !== 0;
+      this.ingredients[itemName].isModifiedThisSession = true;
       if (cost !== 0) {
         this.userSetCosts[itemName] = cost;
       } else {
         delete this.userSetCosts[itemName];
       }
+    } else {
+      // If the ingredient doesn't exist yet, create it
+      this.ingredients[itemName] = {
+        name: itemName,
+        amount: 0,
+        cost: cost,
+        type: 'Resource', // Default type
+        isManuallyOverridden: true,
+        isModifiedThisSession: true
+      };
+      this.userSetCosts[itemName] = cost;
     }
 
     delete this.calculatedCosts[itemName];
 
     // Save the updated ingredient cost
-    dataAccessService.setIngredientCost(itemName, cost);
+    await dataAccessService.setIngredientCost(itemName, this.ingredients[itemName]);
   }
 
-  private recalculateIntermediateItemCost(itemName: string): void {
+  private async recalculateIntermediateItemCost(itemName: string): Promise<void> {
     const recipe = this.itemRecipes[itemName];
     if (recipe) {
       let totalCost = 0;
       for (const ingredient of recipe) {
-        const ingredientCost = this.getIngredientCost(ingredient.name);
+        const ingredientCost = await this.getIngredientCost(ingredient.name);
         totalCost += ingredientCost * ingredient.quantity;
       }
       this.intermediateItems[itemName].cost = totalCost / this.intermediateItems[itemName].amount;
     }
   }
 
-  private getIngredientCost(ingredientName: string): number {
+  private async getIngredientCost(ingredientName: string): Promise<number> {
     if (this.userSetCosts[ingredientName] !== undefined) {
       return this.userSetCosts[ingredientName];
     }
@@ -158,10 +186,10 @@ class CalculationService {
     if (this.intermediateItems[ingredientName]) {
       return this.intermediateItems[ingredientName].cost;
     }
-    return dataAccessService.getIngredientCost(ingredientName);
+    return await dataAccessService.getIngredientCost(ingredientName);
   }
 
-  private removeUnusedIngredients(intermediateItemName: string): void {
+  private async removeUnusedIngredients(intermediateItemName: string): Promise<void> {
     const recipe = this.itemRecipes[intermediateItemName];
     if (recipe) {
       for (const ingredient of recipe) {
@@ -176,7 +204,7 @@ class CalculationService {
     }
   }
 
-  private restoreRecipeIngredients(intermediateItemName: string): void {
+  private async restoreRecipeIngredients(intermediateItemName: string): Promise<void> {
     const recipe = this.itemRecipes[intermediateItemName];
     if (recipe) {
       for (const ingredient of recipe) {
@@ -189,7 +217,8 @@ class CalculationService {
             amount: ingredient.quantity,
             cost: 0,
             type: 'Resource', // Default to Resource, update if needed
-            isManuallyOverridden: false
+            isManuallyOverridden: false,
+            isModifiedThisSession: false
           };
         }
       }
@@ -208,8 +237,8 @@ class CalculationService {
   clearCalculations(): void {
     this.calculatedCosts = {};
     this.intermediateItems = {};
-    this.ingredients = {};
-    // Note: We don't clear userSetCosts as these should persist
+    this.ingredients = {}; // Clear ingredients as well
+    // Note: We don't clear ingredients or userSetCosts as these should persist
   }
 }
 

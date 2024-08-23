@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Input } from "../../../@/components/ui/input"
 import { IIntermediateItem } from '../../types';
 import { copyToClipboard } from '../../utils/clipboard';
+import { formatNumber } from '../../utils/formatters';
 
 interface IntermediateItemsListProps {
   intermediateItems: IIntermediateItem[];
@@ -70,12 +71,12 @@ const IntermediateItemsList: React.FC<IntermediateItemsListProps> = ({
                 >
                   {item.name}
                 </TableCell>
-                <TableCell>{item.amount}</TableCell>
+                <TableCell>{formatNumber(item.amount)}</TableCell>
                 <TableCell>
                   <Input
                     type="text"
                     inputMode="numeric"
-                    value={localCosts[item.name] ?? item.cost}
+                    value={localCosts[item.name] ?? formatNumber(item.cost)}
                     onChange={(e) => handleChange(item.name, e.target.value)}
                     onBlur={() => handleBlur(item.name)}
                     className="w-24 bg-background text-foreground border-input"
