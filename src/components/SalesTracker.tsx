@@ -23,7 +23,10 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [totalProfit, setTotalProfit] = useState(0);
   const [totalTurnover, setTotalTurnover] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[1]);
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const savedItemsPerPage = localStorage.getItem('itemsPerPage');
+    return savedItemsPerPage ? parseInt(savedItemsPerPage) : ITEMS_PER_PAGE_OPTIONS[1];
+  });
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -33,7 +36,9 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
     try {
       const filters: Partial<ISale> = {};
       if (searchTerm) filters.itemName = searchTerm;
-      if (filterSold !== null) filters.quantitySold = filterSold ? 1 : 0;
+      if (filterSold !== null) {
+        filters.quantitySold = filterSold ? -1 : -2; // Using -1 for sold and -2 for unsold as flags
+      }
 
       console.log('Fetching sales with filters:', filters);
       const { sales: loadedSales, total } = await db.getSales(currentPage, itemsPerPage, filters);
@@ -51,6 +56,11 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   useEffect(() => {
     loadSales();
   }, [loadSales, updateTrigger]);
+
+  useEffect(() => {
+    localStorage.setItem('itemsPerPage', itemsPerPage.toString());
+  }, [itemsPerPage]);
+
 
   const loadTotals = useCallback(async () => {
     try {
@@ -157,7 +167,6 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   };
 
   const totalPages = Math.ceil(totalSales / itemsPerPage);
-
 
   return (
     <div className="flex flex-col h-full space-y-4 overflow-hidden bg-background text-foreground">

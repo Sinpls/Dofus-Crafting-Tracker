@@ -40,9 +40,11 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
         query = query.filter(sale => sale.itemName.toLowerCase().includes(filters.itemName!.toLowerCase()));
       }
       if (filters.quantitySold !== undefined) {
-        query = filters.quantitySold === 0
-          ? query.filter(sale => sale.quantitySold === 0)
-          : query.filter(sale => sale.quantitySold > 0);
+        if (filters.quantitySold === -1) { // Sold
+          query = query.filter(sale => sale.quantitySold === sale.quantity);
+        } else if (filters.quantitySold === -2) { // Unsold
+          query = query.filter(sale => sale.quantitySold !== sale.quantity);
+        }
       }
 
       const total = await query.count();
@@ -129,7 +131,6 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
     }
   }
 }
-
 const db = new DofusDatabaseImpl();
 
 export async function setupDatabase() {
