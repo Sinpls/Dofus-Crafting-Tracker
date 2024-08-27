@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { IDofusItem } from '../types';
+import { IDofusItem, IIngredient } from '../types';
 import { joinPaths } from '../utils/pathUtils';
 
 interface DataFile {
@@ -26,7 +26,7 @@ class DataAccessService {
     { filename: 'dofus_consumables.json', url: 'https://api.dofusdu.de/dofus2/en/items/consumables/all', data: [] }
   ];
 
-  private ingredientCosts: { [key: string]: number } = {};
+  private ingredientCosts: { [key: string]: IIngredient } = {};
   private dataPath: string = '';
 
   async init() {
@@ -110,16 +110,7 @@ class DataAccessService {
     return undefined;
   }
 
-  getIngredientCost(name: string): number {
-    return this.ingredientCosts[name] || 0;
-  }
-
-  setIngredientCost(name: string, cost: number): void {
-    this.ingredientCosts[name] = cost;
-    this.saveIngredientCosts();
-  }
-
-  private async loadIngredientCosts(): Promise<void> {
+  async loadIngredientCosts(): Promise<{ [key: string]: IIngredient }> {
     const filePath = joinPaths(this.dataPath, 'ingredient_costs.json');
     try {
       const fileExists = await window.electronAPI.fileExists(filePath);
@@ -127,9 +118,20 @@ class DataAccessService {
         const fileContent = await window.electronAPI.readFile(filePath);
         this.ingredientCosts = JSON.parse(fileContent);
       }
+      return this.ingredientCosts;
     } catch (error) {
       console.error('Error loading ingredient costs:', error);
+      return {};
     }
+  }
+
+  async setIngredientCost(name: string, ingredient: IIngredient): Promise<void> {
+    this.ingredientCosts[name] = ingredient;
+    await this.saveIngredientCosts();
+  }
+
+  async getIngredientCost(name: string): Promise<number> {
+    return this.ingredientCosts[name]?.cost || 0;
   }
 
   private async saveIngredientCosts(): Promise<void> {
