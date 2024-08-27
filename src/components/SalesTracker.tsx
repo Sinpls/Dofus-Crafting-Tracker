@@ -23,7 +23,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [totalProfit, setTotalProfit] = useState(0);
   const [totalTurnover, setTotalTurnover] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[0]);
+  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[1]);
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
