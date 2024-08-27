@@ -28,6 +28,7 @@ export interface ISale {
   sellPrice: number;
   addedDate: Date;
   profit: number;
+  tags?: string[]; // New field
 }
 
 export interface IIntermediateItem {
@@ -53,6 +54,7 @@ export interface IDataFile {
   filename: string;
   url: string;
   data: IDofusItem[];
+  lastUpdated?: number; // New field
 }
 
 export interface DofusDatabase extends Dexie {

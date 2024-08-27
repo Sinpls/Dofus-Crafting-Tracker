@@ -1,17 +1,12 @@
 import axios from 'axios';
-import { IDofusItem, IIngredient } from '../types';
+import { IDofusItem, IIngredient, IDataFile } from '../types';
 import { joinPaths } from '../utils/pathUtils';
-
-interface DataFile {
-  filename: string;
-  url: string;
-  data: IDofusItem[];
-}
 
 declare global {
   interface Window {
     electronAPI: {
       getDataPath: () => Promise<string>;
+      getUserDataPath: () => Promise<string>;
       fileExists: (path: string) => Promise<boolean>;
       readFile: (path: string) => Promise<string>;
       writeFile: (path: string, data: string) => Promise<void>;
@@ -20,7 +15,7 @@ declare global {
 }
 
 class DataAccessService {
-  private dataFiles: DataFile[] = [
+  private dataFiles: IDataFile[] = [
     { filename: 'dofus_equipment.json', url: 'https://api.dofusdu.de/dofus2/en/items/equipment/all', data: [] },
     { filename: 'dofus_resources.json', url: 'https://api.dofusdu.de/dofus2/en/items/resources/all', data: [] },
     { filename: 'dofus_consumables.json', url: 'https://api.dofusdu.de/dofus2/en/items/consumables/all', data: [] }
@@ -28,6 +23,7 @@ class DataAccessService {
 
   private ingredientCosts: { [key: string]: IIngredient } = {};
   private dataPath: string = '';
+  private cache: { [key: string]: IDofusItem[] } = {};
 
   async init() {
     try {
@@ -38,67 +34,53 @@ class DataAccessService {
       throw new Error('Failed to initialize DataAccessService: Unable to get data path');
     }
 
-    try {
-      await Promise.all(this.dataFiles.map(file => this.checkAndUpdateFile(file)));
-      await this.loadIngredientCosts();
-    } catch (error) {
-      console.error('Failed to initialize data files:', error);
-      throw new Error('Failed to initialize DataAccessService: Unable to load data files');
-    }
+    await this.loadIngredientCosts();
   }
 
-  private async checkAndUpdateFile(file: DataFile) {
+  private async loadFile(file: IDataFile): Promise<void> {
     const filePath = joinPaths(this.dataPath, file.filename);
-    const timestampPath = joinPaths(this.dataPath, `${file.filename}_timestamp`);
+    const fileExists = await window.electronAPI.fileExists(filePath);
 
-    try {
-      const fileExists = await window.electronAPI.fileExists(filePath);
-      const timestampExists = await window.electronAPI.fileExists(timestampPath);
-
-      if (!fileExists || !timestampExists || await this.isDataStale(timestampPath)) {
-        await this.downloadAndStoreFile(file);
-      } else {
-        const fileContent = await window.electronAPI.readFile(filePath);
-        file.data = JSON.parse(fileContent).items;
-      }
-    } catch (error) {
-      console.error(`Error processing file ${file.filename}:`, error);
-      throw error;
+    if (fileExists) {
+      const fileContent = await window.electronAPI.readFile(filePath);
+      const parsedData = JSON.parse(fileContent);
+      file.data = parsedData.items;
+      file.lastUpdated = parsedData.lastUpdated;
+    } else {
+      await this.downloadAndStoreFile(file);
     }
   }
 
-  private async isDataStale(timestampPath: string): Promise<boolean> {
-    try {
-      const staleThreshold = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-      const timestamp = parseInt(await window.electronAPI.readFile(timestampPath));
-      return Date.now() - timestamp > staleThreshold;
-    } catch (error) {
-      console.error('Error checking if data is stale:', error);
-      return true; // Assume data is stale if we can't read the timestamp
-    }
-  }
-
-  private async downloadAndStoreFile(file: DataFile) {
+  private async downloadAndStoreFile(file: IDataFile) {
     try {
       const response = await axios.get(file.url);
       file.data = response.data.items;
+      file.lastUpdated = Date.now();
       const filePath = joinPaths(this.dataPath, file.filename);
-      const timestampPath = joinPaths(this.dataPath, `${file.filename}_timestamp`);
-      await window.electronAPI.writeFile(filePath, JSON.stringify(response.data));
-      await window.electronAPI.writeFile(timestampPath, Date.now().toString());
+      await window.electronAPI.writeFile(filePath, JSON.stringify({ items: file.data, lastUpdated: file.lastUpdated }));
     } catch (error) {
       console.error(`Error downloading ${file.filename}:`, error);
       throw error;
     }
   }
 
-  searchItems(searchTerm: string): IDofusItem[] {
+  async searchItems(searchTerm: string): Promise<IDofusItem[]> {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    if (this.cache[lowerSearchTerm]) {
+      return this.cache[lowerSearchTerm];
+    }
+
     let results: IDofusItem[] = [];
     for (const file of this.dataFiles) {
+      if (file.data.length === 0) {
+        await this.loadFile(file);
+      }
       results = results.concat(file.data.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        item.name.toLowerCase().includes(lowerSearchTerm)
       ));
     }
+
+    this.cache[lowerSearchTerm] = results;
     return results;
   }
 
@@ -141,6 +123,19 @@ class DataAccessService {
     } catch (error) {
       console.error('Error saving ingredient costs:', error);
     }
+  }
+
+  async checkForUpdates(): Promise<void> {
+    const updateInterval = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    for (const file of this.dataFiles) {
+      if (!file.lastUpdated || Date.now() - file.lastUpdated > updateInterval) {
+        await this.downloadAndStoreFile(file);
+      }
+    }
+  }
+
+  clearCache(): void {
+    this.cache = {};
   }
 }
 

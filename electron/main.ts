@@ -58,7 +58,17 @@ function createWindow() {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
 
-  ipcMain.handle('get-data-path', () => dataPath);
+  ipcMain.handle('get-data-path', () => {
+    if (process.env.NODE_ENV === 'development') {
+      return path.join(app.getPath('userData'), 'dev_data');
+    } else {
+      return path.join(process.resourcesPath, 'data');
+    }
+  });
+
+  ipcMain.handle('get-user-data-path', () => {
+    return app.getPath('userData');
+  });
 
   ipcMain.handle('file-exists', (_, path) => fs.existsSync(path));
 

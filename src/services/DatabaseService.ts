@@ -13,32 +13,57 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
 
     super(dbPath);
 
-    this.version(4).stores({
+    this.version(5).stores({
       craftedItem: '++id, ankama_id, name, amount, sellPrice',
       ingredients: '++id, name, amount, cost, type',
       sales: '++id, itemName, quantity, quantitySold, costPrice, sellPrice, addedDate, profit'
+    });
+
+    this.version(6).stores({
+      sales: '++id, itemName, quantity, quantitySold, costPrice, sellPrice, addedDate, profit, *tags'
     }).upgrade(tx => {
       return tx.table('sales').toCollection().modify(sale => {
-        delete sale.sellDate;
+        if (!sale.tags || !Array.isArray(sale.tags)) {
+          sale.tags = [sale.itemName.toLowerCase()];
+        }
       });
     });
+
+    this.version(7).stores({
+      sales: '++id, itemName, quantity, quantitySold, costPrice, sellPrice, addedDate, profit, *tags'
+    }).upgrade(tx => {
+      return tx.table('sales').toCollection().modify(sale => {
+        if (!sale.itemName) {
+          delete sale.id; // This will cause Dexie to remove the entry
+        }
+      });
+    });
+    
   }
 
   async addSale(sale: Omit<ISale, 'id'>): Promise<number> {
     return await this.sales.add({
       ...sale,
-      quantitySold: sale.quantitySold || 0
+      quantitySold: sale.quantitySold || 0,
+      tags: [sale.itemName.toLowerCase()]
     });
   }
 
   async getSales(page: number = 1, itemsPerPage: number = 10, filters: Partial<ISale> = {}): Promise<{ sales: ISale[], total: number }> {
     try {
       let query = this.sales.orderBy('addedDate');
-
-      // Apply filters
+  
       if (filters.itemName) {
-        query = query.filter(sale => sale.itemName.toLowerCase().includes(filters.itemName!.toLowerCase()));
+        const searchTerm = filters.itemName.toLowerCase();
+        query = query.filter(sale => {
+          if (sale.tags && Array.isArray(sale.tags)) {
+            return sale.tags.some(tag => tag.includes(searchTerm));
+          } else {
+            return sale.itemName.toLowerCase().includes(searchTerm);
+          }
+        });
       }
+  
       if (filters.quantitySold !== undefined) {
         if (filters.quantitySold === -1) { // Sold
           query = query.filter(sale => sale.quantitySold === sale.quantity);
@@ -46,18 +71,21 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
           query = query.filter(sale => sale.quantitySold !== sale.quantity);
         }
       }
-
+  
       const total = await query.count();
-
+  
       const sales = await query
         .reverse() // To get the most recent sales first
         .offset((page - 1) * itemsPerPage)
         .limit(itemsPerPage)
         .toArray();
-
-      console.log('Fetched sales:', sales);
-
-      return { sales, total };
+  
+      // Filter out any potential empty or invalid entries
+      const validSales = sales.filter(sale => sale && sale.itemName);
+  
+      console.log('Fetched sales:', validSales);
+  
+      return { sales: validSales, total };
     } catch (error) {
       console.error('Error in getSales:', error);
       throw error;
@@ -69,6 +97,10 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
     if (sale) {
       const updatedSale = { ...sale, ...updates };
       updatedSale.profit = this.calculateProfit(updatedSale);
+      
+      if (updates.itemName) {
+        updatedSale.tags = [updatedSale.itemName.toLowerCase()];
+      }
       
       const result = await this.sales.update(id, updatedSale);
       
@@ -130,7 +162,40 @@ class DofusDatabaseImpl extends Dexie implements DofusDatabase {
       }
     }
   }
+
+  async addCraftedItem(item: Omit<ICraftedItem, 'id'>): Promise<number> {
+    return await this.craftedItem.add(item);
+  }
+
+  async getCraftedItems(): Promise<ICraftedItem[]> {
+    return await this.craftedItem.toArray();
+  }
+
+  async updateCraftedItem(id: number, updates: Partial<ICraftedItem>): Promise<number> {
+    return await this.craftedItem.update(id, updates);
+  }
+
+  async deleteCraftedItem(id: number): Promise<void> {
+    await this.craftedItem.delete(id);
+  }
+
+  async addIngredient(ingredient: Omit<IIngredient, 'id'>): Promise<number> {
+    return await this.ingredients.add(ingredient);
+  }
+
+  async getIngredients(): Promise<IIngredient[]> {
+    return await this.ingredients.toArray();
+  }
+
+  async updateIngredient(id: number, updates: Partial<IIngredient>): Promise<number> {
+    return await this.ingredients.update(id, updates);
+  }
+
+  async deleteIngredient(id: number): Promise<void> {
+    await this.ingredients.delete(id);
+  }
 }
+
 const db = new DofusDatabaseImpl();
 
 export async function setupDatabase() {

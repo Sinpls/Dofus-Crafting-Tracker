@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ISale, IDofusItem } from '../types';
 import { db, setupDatabase } from '../services/DatabaseService';
 import { formatNumber } from '../utils/formatters';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface SalesTrackerProps {
   addCraftedItem: (item: IDofusItem | { name: string; ankama_id?: number }) => Promise<void>;
@@ -25,11 +26,25 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
   const [error, setError] = useState<string | null>(null);
   const [itemsPerPage, setItemsPerPage] = useState(() => {
     const savedItemsPerPage = localStorage.getItem('itemsPerPage');
-    return savedItemsPerPage ? parseInt(savedItemsPerPage) : ITEMS_PER_PAGE_OPTIONS[1];
+    return savedItemsPerPage ? parseInt(savedItemsPerPage) : ITEMS_PER_PAGE_OPTIONS[2];
   });
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: sales.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 35,
+    overscan: 5,
+  });
+
+  useEffect(() => {
+    console.log('Sales data:', sales);
+    console.log('Virtualized items:', rowVirtualizer.getVirtualItems());
+  }, [sales, rowVirtualizer]);
 
   const loadSales = useCallback(async () => {
     setError(null);
@@ -37,14 +52,10 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
       const filters: Partial<ISale> = {};
       if (searchTerm) filters.itemName = searchTerm;
       if (filterSold !== null) {
-        filters.quantitySold = filterSold ? -1 : -2; // Using -1 for sold and -2 for unsold as flags
+        filters.quantitySold = filterSold ? -1 : -2;
       }
 
-      console.log('Fetching sales with filters:', filters);
       const { sales: loadedSales, total } = await db.getSales(currentPage, itemsPerPage, filters);
-      console.log('Loaded sales:', loadedSales);
-      console.log('Total sales:', total);
-
       setSales(loadedSales);
       setTotalSales(total);
     } catch (err) {
@@ -216,7 +227,7 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
           </div>
         </div>
       </div>
-      <div className="flex-grow overflow-auto">
+      <div className="flex-grow overflow-auto" ref={tableContainerRef}>
         <div className="rounded-md border border-border">
           <Table className="table-custom">
             <TableHeader>
@@ -232,12 +243,10 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sales.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center">No sales found</TableCell>
-                </TableRow>
-              ) : (
-                sales.map((sale) => (
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const sale = sales[virtualRow.index];
+                if (!sale) return null;
+                return (
                   <TableRow key={sale.id}>
                     <TableCell>{sale.itemName}</TableCell>
                     <TableCell>
@@ -301,8 +310,8 @@ const SalesTracker: React.FC<SalesTrackerProps> = ({ addCraftedItem }) => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
