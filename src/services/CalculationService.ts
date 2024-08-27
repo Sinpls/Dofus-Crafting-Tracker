@@ -17,8 +17,7 @@ class CalculationService {
     for (const [name, ingredient] of Object.entries(savedCosts)) {
       this.userSetCosts[name] = ingredient.cost;
       this.ingredients[name] = {
-        ...ingredient,
-        isModifiedThisSession: false
+        ...ingredient
       };
     }
   }
@@ -84,8 +83,7 @@ class CalculationService {
           amount: amount,
           cost: this.userSetCosts[itemName] !== undefined ? this.userSetCosts[itemName] : cost / amount,
           type: item.type.name,
-          isManuallyOverridden: this.userSetCosts[itemName] !== undefined,
-          isModifiedThisSession: false
+          isManuallyOverridden: this.userSetCosts[itemName] !== undefined
         };
       } else {
         const existingIngredient = this.ingredients[itemName];
@@ -138,8 +136,7 @@ class CalculationService {
       }
     } else if (this.ingredients[itemName]) {
       this.ingredients[itemName].cost = cost;
-      this.ingredients[itemName].isManuallyOverridden = cost !== 0;
-      this.ingredients[itemName].isModifiedThisSession = true;
+      this.ingredients[itemName].isManuallyOverridden = cost !== 0
       if (cost !== 0) {
         this.userSetCosts[itemName] = cost;
       } else {
@@ -152,8 +149,7 @@ class CalculationService {
         amount: 0,
         cost: cost,
         type: 'Resource', // Default type
-        isManuallyOverridden: true,
-        isModifiedThisSession: true
+        isManuallyOverridden: true
       };
       this.userSetCosts[itemName] = cost;
     }
@@ -217,8 +213,7 @@ class CalculationService {
             amount: ingredient.quantity,
             cost: 0,
             type: 'Resource', // Default to Resource, update if needed
-            isManuallyOverridden: false,
-            isModifiedThisSession: false
+            isManuallyOverridden: false
           };
         }
       }

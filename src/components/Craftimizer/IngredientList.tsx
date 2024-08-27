@@ -60,10 +60,7 @@ const IngredientList: React.FC<IngredientListProps> = ({
             {sortedIngredients.map((ingredient) => (
               <TableRow 
                 key={ingredient.name} 
-                className={`hover:bg-muted/50 ${
-                  ingredient.type === 'Intermediate' ? 'bg-yellow-500/20' : 
-                  !ingredient.isModifiedThisSession ? 'bg-yellow-500/10' : ''
-                }`}
+                className="hover:bg-muted/50"
               >
                 <TableCell 
                   onClick={() => handleItemClick(ingredient.name)}
@@ -79,9 +76,7 @@ const IngredientList: React.FC<IngredientListProps> = ({
                     value={localCosts[ingredient.name] ?? formatNumber(ingredient.cost)}
                     onChange={(e) => handleChange(ingredient.name, e.target.value)}
                     onBlur={() => handleBlur(ingredient.name)}
-                    className={`w-24 bg-background text-foreground border-input ${
-                      !ingredient.isModifiedThisSession ? 'bg-yellow-500/10' : ''
-                    }`}
+                    className="w-24 bg-background text-foreground border-input"
                   />
                 </TableCell>
                 <TableCell>{ingredient.type}</TableCell>

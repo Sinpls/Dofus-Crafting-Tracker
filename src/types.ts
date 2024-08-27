@@ -17,7 +17,6 @@ export interface IIngredient {
   cost: number;
   type: string;
   isManuallyOverridden?: boolean;
-  isModifiedThisSession: boolean;
 }
 
 export interface ISale {
